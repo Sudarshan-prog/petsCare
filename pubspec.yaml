@@ -1,0 +1,36 @@
+name: carebridge
+description: A dual-service ecosystem connecting Pet Owners with Verified Caretakers and Adoption Hubs.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  google_fonts: ^6.1.0
+  flutter_riverpod: ^2.4.9
+  google_maps_flutter: ^2.5.3
+  geolocator: ^10.1.0
+  glassmorphism_ui: ^0.3.0
+  http: ^1.1.0
+  intl: ^0.19.0
+  flutter_spinkit: ^5.2.0
+  image_picker: ^1.0.7
+  cached_network_image: ^3.3.1
+  url_launcher: ^6.2.4
+  font_awesome_flutter: ^10.6.0
+  animations: ^2.0.11
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/json/
