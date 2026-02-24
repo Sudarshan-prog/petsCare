@@ -1,23 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carebridge/core/app_theme.dart';
+import 'package:carebridge/core/auth/auth_provider.dart';
 import 'package:carebridge/features/home/presentation/pages/home_screen.dart';
+import 'package:carebridge/features/home/presentation/pages/caretaker_home_screen.dart';
+import 'package:carebridge/features/auth/presentation/pages/landing_screen.dart';
+import 'package:carebridge/features/profile/presentation/pages/profile_screen.dart';
 
-class MainLayout extends StatefulWidget {
+class MainLayout extends ConsumerStatefulWidget {
   const MainLayout({super.key});
 
   @override
-  State<MainLayout> createState() => _MainLayoutState();
+  ConsumerState<MainLayout> createState() => _MainLayoutState();
 }
 
-class _MainLayoutState extends State<MainLayout> {
+class _MainLayoutState extends ConsumerState<MainLayout> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    const HomeScreen(),
-    _buildPlaceholderPage('Find a Furry Friend', Icons.favorite_rounded),
-    _buildPlaceholderPage('AI Wellness Assistant', Icons.chat_bubble_rounded),
-    _buildPlaceholderPage('Pet Parent Profile', Icons.person_rounded),
-  ];
+  List<Widget> _getPages(String? role) {
+    return [
+      role == 'caretaker' ? const CaretakerHomeScreen() : const HomeScreen(),
+      _buildPlaceholderPage(
+        role == 'caretaker' ? 'My Appointments' : 'Find a Furry Friend',
+        role == 'caretaker'
+            ? Icons.calendar_month_rounded
+            : Icons.favorite_rounded,
+      ),
+      _buildPlaceholderPage(
+        role == 'caretaker' ? 'Caretaker Resources' : 'AI Wellness Assistant',
+        role == 'caretaker'
+            ? Icons.menu_book_rounded
+            : Icons.chat_bubble_rounded,
+      ),
+      const ProfileScreen(),
+    ];
+  }
 
   static Widget _buildPlaceholderPage(String title, IconData icon) {
     return Scaffold(
@@ -46,7 +63,7 @@ class _MainLayoutState extends State<MainLayout> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Coming soon in Phase 3',
+                'Coming soon in Phase 4',
                 style: TextStyle(color: Colors.black45),
               ),
             ],
@@ -58,8 +75,22 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+
+    if (authState is! AuthAuthenticated) {
+      return const LandingScreen();
+    }
+
+    final user = authState.user;
+    debugPrint("MAIN_LAYOUT: Current Role is -> ${user.role}");
+
+    final pages = _getPages(user.role);
+    final activeColor = user.role == 'caretaker'
+        ? AppTheme.safetyTeal
+        : AppTheme.brandBlueGreen;
+
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: pages[_selectedIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: AppTheme.milkyWhite,
@@ -75,21 +106,29 @@ class _MainLayoutState extends State<MainLayout> {
           currentIndex: _selectedIndex,
           onTap: (v) => setState(() => _selectedIndex = v),
           backgroundColor: AppTheme.milkyWhite,
-          selectedItemColor: AppTheme.brandBlueGreen,
+          selectedItemColor: activeColor,
           unselectedItemColor: Colors.black26,
           elevation: 0,
           type: BottomNavigationBarType.fixed,
           selectedLabelStyle:
               const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           unselectedLabelStyle: const TextStyle(fontSize: 12),
-          items: const [
-            BottomNavigationBarItem(
+          items: [
+            const BottomNavigationBarItem(
                 icon: Icon(Icons.home_rounded), label: 'Home'),
             BottomNavigationBarItem(
-                icon: Icon(Icons.favorite_rounded), label: 'Adopt'),
+              icon: Icon(user.role == 'caretaker'
+                  ? Icons.calendar_month_rounded
+                  : Icons.favorite_rounded),
+              label: user.role == 'caretaker' ? 'Business' : 'Adopt',
+            ),
             BottomNavigationBarItem(
-                icon: Icon(Icons.chat_bubble_rounded), label: 'AI Care'),
-            BottomNavigationBarItem(
+              icon: Icon(user.role == 'caretaker'
+                  ? Icons.menu_book_rounded
+                  : Icons.chat_bubble_rounded),
+              label: user.role == 'caretaker' ? 'Tools' : 'AI Care',
+            ),
+            const BottomNavigationBarItem(
                 icon: Icon(Icons.person_rounded), label: 'Profile'),
           ],
         ),

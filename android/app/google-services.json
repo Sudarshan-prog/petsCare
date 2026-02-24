@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "910889686127",
+    "project_id": "carebridge-pet-ap",
+    "storage_bucket": "carebridge-pet-ap.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:910889686127:android:87de8413cef6888946699a",
+        "android_client_info": {
+          "package_name": "com.carebridge.carebridge"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBB8NQsWYDR72zt-CFv7k65nPL99JxFiEE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

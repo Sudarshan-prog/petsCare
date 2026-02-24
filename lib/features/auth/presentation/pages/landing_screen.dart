@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:carebridge/core/app_theme.dart';
 import 'package:carebridge/shared/widgets/main_layout.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
+import 'login_screen.dart';
+import 'signup_screen.dart';
 
 class LandingScreen extends StatelessWidget {
   const LandingScreen({super.key});
@@ -49,11 +53,21 @@ class LandingScreen extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(24),
-                      child: Image.network(
-                        'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&q=80&w=800',
+                      child: CachedNetworkImage(
+                        imageUrl:
+                            'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&q=80&w=800',
                         height: 350,
                         width: double.infinity,
                         fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: AppTheme.brandBlueGreen.withOpacity(0.05),
+                          child:
+                              const Center(child: CircularProgressIndicator()),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: AppTheme.brandBlueGreen.withOpacity(0.05),
+                          child: const Icon(Icons.error_outline),
+                        ),
                       ),
                     ),
                     Padding(
@@ -137,7 +151,7 @@ class LandingScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const MainLayout()),
+                            builder: (context) => const SignupScreen()),
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -164,7 +178,13 @@ class LandingScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 56,
                   child: OutlinedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const LoginScreen()),
+                      );
+                    },
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
                           color: AppTheme.brandBlueGreen.withOpacity(0.3)),
@@ -172,7 +192,7 @@ class LandingScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(16)),
                     ),
                     child: const Text(
-                      'Join as a Caretaker',
+                      'Log In',
                       style: TextStyle(
                           color: AppTheme.brandBlueGreen,
                           fontWeight: FontWeight.bold),
@@ -263,8 +283,9 @@ class LandingScreen extends StatelessWidget {
               backgroundColor: AppTheme.milkyWhite,
               child: CircleAvatar(
                 radius: 16,
-                backgroundImage:
-                    NetworkImage('https://i.pravatar.cc/100?img=${i + 10}'),
+                backgroundColor: AppTheme.brandBlueGreen.withOpacity(0.1),
+                backgroundImage: CachedNetworkImageProvider(
+                    'https://i.pravatar.cc/100?img=${i + 10}'),
               ),
             ),
           ),

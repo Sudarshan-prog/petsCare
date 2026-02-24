@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:carebridge/core/app_theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:carebridge/core/auth/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    String userName = 'Rahul'; // Default fallback
+    String profileImg = 'https://images.pravatar.cc/150?img=11';
+
+    if (authState is AuthAuthenticated) {
+      userName = authState.user.name.split(' ')[0]; // Just the first name
+      profileImg = authState.user.profileUrl ?? profileImg;
+    }
+
     return Scaffold(
       backgroundColor: AppTheme.softCream,
       body: SafeArea(
@@ -17,10 +29,10 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(context),
+                _buildHeader(context, userName, profileImg),
                 const SizedBox(height: 30),
 
-                // Search Bar inspired by the clean UI
+                // Search Bar
                 _buildSearchBar(context),
                 const SizedBox(height: 30),
 
@@ -40,39 +52,46 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, String name, String image) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.shield_rounded,
-                    color: AppTheme.safetyTeal, size: 18),
-                const SizedBox(width: 6),
-                const Text(
-                  'CareBridge Secured',
-                  style: TextStyle(
-                    color: AppTheme.safetyTeal,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.1,
-                    fontSize: 10,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.shield_rounded,
+                      color: AppTheme.safetyTeal, size: 18),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'CareBridge Secured',
+                    style: TextStyle(
+                      color: AppTheme.safetyTeal,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.1,
+                      fontSize: 10,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Hello, Rahul! 👋',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Hello, $name! 👋',
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.bold,
+                      fontSize:
+                          24, // Explicit size to prevent unexpected scaling
+                    ),
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 16),
         Container(
           padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
@@ -80,10 +99,10 @@ class HomeScreen extends StatelessWidget {
             border: Border.all(
                 color: AppTheme.brandBlueGreen.withOpacity(0.2), width: 2),
           ),
-          child: const CircleAvatar(
+          child: CircleAvatar(
             radius: 25,
-            backgroundImage:
-                NetworkImage('https://images.pravatar.cc/150?img=11'),
+            backgroundColor: AppTheme.brandBlueGreen.withOpacity(0.1),
+            backgroundImage: CachedNetworkImageProvider(image),
           ),
         ),
       ],
@@ -126,61 +145,77 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildServiceGrid(BuildContext context) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.3,
+    return Column(
       children: [
-        _buildServiceItem(context, 'Caretaking', FontAwesomeIcons.shieldHeart,
-            AppTheme.brandBlueGreen),
-        _buildServiceItem(
-            context, 'Adopt', FontAwesomeIcons.paw, AppTheme.safetyTeal),
-        _buildServiceItem(context, 'AI Wellness', FontAwesomeIcons.robot,
-            Colors.deepPurpleAccent),
-        _buildServiceItem(context, 'SOS Help', FontAwesomeIcons.truckMedical,
-            AppTheme.alertRed),
+        Row(
+          children: [
+            Expanded(
+              child: _buildServiceItem(context, 'Caretaking',
+                  FontAwesomeIcons.shieldHeart, AppTheme.brandBlueGreen),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildServiceItem(
+                  context, 'Adopt', FontAwesomeIcons.paw, AppTheme.safetyTeal),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildServiceItem(context, 'AI Wellness',
+                  FontAwesomeIcons.robot, Colors.deepPurpleAccent),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildServiceItem(context, 'SOS Help',
+                  FontAwesomeIcons.truckMedical, AppTheme.alertRed),
+            ),
+          ],
+        ),
       ],
     );
   }
 
   Widget _buildServiceItem(
       BuildContext context, String title, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.04)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+    return AspectRatio(
+      aspectRatio: 1.3,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.black.withOpacity(0.04)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 20),
             ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const Spacer(),
-          Text(
-            title,
-            style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: Colors.black87),
-          ),
-        ],
+            const Spacer(),
+            Text(
+              title,
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.black87),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -239,8 +274,27 @@ class HomeScreen extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child:
-                Image.network(image, width: 80, height: 80, fit: BoxFit.cover),
+            child: CachedNetworkImage(
+              imageUrl: image,
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => Container(
+                color: AppTheme.safetyTeal.withOpacity(0.1),
+                child: const Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ),
+              errorWidget: (context, url, error) => Container(
+                color: AppTheme.safetyTeal.withOpacity(0.1),
+                child:
+                    const Icon(Icons.error_outline, color: AppTheme.safetyTeal),
+              ),
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
