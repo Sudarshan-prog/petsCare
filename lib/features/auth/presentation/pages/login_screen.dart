@@ -6,6 +6,7 @@ import 'package:carebridge/shared/widgets/main_layout.dart';
 import 'package:carebridge/features/onboarding/presentation/pages/role_selection_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'signup_screen.dart';
+import 'package:carebridge/core/providers/app_state_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -31,6 +32,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             (route) => false,
           );
         } else {
+          // Mark first run complete upon successful login
+          ref.read(appStateProvider.notifier).markFirstRunComplete();
           // Returning user -> Home
           Navigator.pushAndRemoveUntil(
             context,

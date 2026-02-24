@@ -4,6 +4,8 @@ import 'package:carebridge/core/app_theme.dart';
 import 'package:carebridge/core/auth/auth_provider.dart';
 import 'package:carebridge/shared/widgets/main_layout.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:carebridge/shared/presentation/pages/map_selection_screen.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class CaretakerSetupScreen extends ConsumerStatefulWidget {
   const CaretakerSetupScreen({super.key});
@@ -16,7 +18,10 @@ class CaretakerSetupScreen extends ConsumerStatefulWidget {
 class _CaretakerSetupScreenState extends ConsumerState<CaretakerSetupScreen> {
   final _bioController = TextEditingController();
   final _priceController = TextEditingController();
+  final _phoneController = TextEditingController();
   final List<String> _selectedSpecialties = [];
+  double? _lat;
+  double? _lng;
   bool _isLoading = false;
 
   final List<Map<String, dynamic>> _specialties = [
@@ -84,7 +89,7 @@ class _CaretakerSetupScreenState extends ConsumerState<CaretakerSetupScreen> {
                     _specialties.map((s) => _buildSpecialtyChip(s)).toList(),
               ),
               const SizedBox(height: 32),
-              const Text('Base Price (per day)',
+              const Text('Base Price (per hour)',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               TextField(
@@ -98,6 +103,73 @@ class _CaretakerSetupScreenState extends ConsumerState<CaretakerSetupScreen> {
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text('Phone Number (Direct Contact)',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.phone, size: 20),
+                  hintText: '+91 98765 43210',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text('Service Location',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () async {
+                  final result = await Navigator.push<LatLng>(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => MapSelectionScreen(
+                            initialLocation:
+                                _lat != null ? LatLng(_lat!, _lng!) : null)),
+                  );
+                  if (result != null) {
+                    setState(() {
+                      _lat = result.latitude;
+                      _lng = result.longitude;
+                    });
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: _lat != null
+                            ? AppTheme.safetyTeal
+                            : Colors.transparent),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.map_rounded,
+                          color: _lat != null
+                              ? AppTheme.safetyTeal
+                              : Colors.black38),
+                      const SizedBox(width: 12),
+                      Text(
+                        _lat != null
+                            ? 'Location Marked ✅'
+                            : 'Tap to select location on map',
+                        style: TextStyle(
+                            color: _lat != null
+                                ? AppTheme.safetyTeal
+                                : Colors.black38),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 48),
@@ -161,9 +233,12 @@ class _CaretakerSetupScreenState extends ConsumerState<CaretakerSetupScreen> {
   }
 
   Future<void> _handleSave() async {
-    if (_bioController.text.isEmpty || _priceController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill in all details')));
+    if (_bioController.text.isEmpty ||
+        _priceController.text.isEmpty ||
+        _phoneController.text.isEmpty ||
+        _lat == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Please fill in all details and select location')));
       return;
     }
 
@@ -173,6 +248,9 @@ class _CaretakerSetupScreenState extends ConsumerState<CaretakerSetupScreen> {
           bio: _bioController.text,
           specialties: _selectedSpecialties,
           price: _priceController.text,
+          phoneNumber: _phoneController.text,
+          latitude: _lat!,
+          longitude: _lng!,
         );
 
     setState(() => _isLoading = false);

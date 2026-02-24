@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carebridge/core/app_theme.dart';
 import 'package:carebridge/core/auth/auth_provider.dart';
-import 'package:carebridge/shared/widgets/main_layout.dart';
 import 'package:carebridge/features/onboarding/presentation/pages/role_selection_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'login_screen.dart';
+import 'package:carebridge/core/providers/app_state_provider.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -23,6 +23,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   void _listenToAuthState() {
     ref.listen<AuthState>(authProvider, (previous, next) {
       if (next is AuthAuthenticated) {
+        // Mark first run as complete so next logout goes to Login instead of Signup
+        ref.read(appStateProvider.notifier).markFirstRunComplete();
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),

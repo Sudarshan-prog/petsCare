@@ -4,6 +4,13 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:carebridge/core/auth/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:carebridge/core/providers/caretaker_provider.dart';
+import 'package:geolocator/geolocator.dart';
+
+import 'package:carebridge/features/booking/presentation/pages/booking_screen.dart';
+import 'package:carebridge/features/booking/presentation/providers/booking_provider.dart';
+import 'package:carebridge/features/booking/data/models/booking_model.dart';
+import 'package:intl/intl.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -41,9 +48,12 @@ class HomeScreen extends ConsumerWidget {
                 _buildServiceGrid(context),
 
                 const SizedBox(height: 40),
+                _buildMyBookings(context, ref),
+
+                const SizedBox(height: 40),
                 _buildSectionTitle(context, 'Verified Professionals'),
                 const SizedBox(height: 16),
-                _buildFeaturedCaretakers(context),
+                _buildFeaturedCaretakers(context, ref),
               ],
             ),
           ),
@@ -129,6 +139,124 @@ class HomeScreen extends ConsumerWidget {
           border: InputBorder.none,
           hintStyle: TextStyle(color: Colors.black26, fontSize: 14),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMyBookings(BuildContext context, WidgetRef ref) {
+    final bookingsAsync = ref.watch(ownerBookingsStreamProvider);
+
+    return bookingsAsync.when(
+      data: (bookings) {
+        if (bookings.isEmpty) return const SizedBox.shrink();
+
+        // Sort bookings by date (most recent first)
+        final sortedBookings = List<Booking>.from(bookings)
+          ..sort((a, b) => b.date.compareTo(a.date));
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionTitle(context, 'My Bookings'),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 160,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: sortedBookings.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                itemBuilder: (context, index) {
+                  return _buildOwnerBookingItem(sortedBookings[index]);
+                },
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildOwnerBookingItem(Booking booking) {
+    Color statusColor = Colors.orange;
+    IconData statusIcon = Icons.access_time_rounded;
+
+    if (booking.status == 'confirmed') {
+      statusColor = Colors.green;
+      statusIcon = Icons.check_circle_rounded;
+    } else if (booking.status == 'cancelled') {
+      statusColor = AppTheme.alertRed;
+      statusIcon = Icons.cancel_rounded;
+    }
+
+    return Container(
+      width: 240,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: statusColor.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: statusColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(statusIcon, color: statusColor, size: 16),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                booking.status.toUpperCase(),
+                style: TextStyle(
+                  color: statusColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 10,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                DateFormat('MMM d').format(booking.date),
+                style: const TextStyle(color: Colors.black38, fontSize: 10),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            booking.caretakerName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          Text(
+            '${booking.serviceType} • ${booking.petName}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.black45, fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '₹${booking.totalPrice} • ${booking.hours}h',
+            style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.brandBlueGreen,
+                fontSize: 12),
+          ),
+        ],
       ),
     );
   }
@@ -220,31 +348,81 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFeaturedCaretakers(BuildContext context) {
-    return Column(
-      children: [
-        _buildCaretakerItem(
-          name: 'Rahul Sharma',
-          role: 'Pro Dog Specialist',
-          dist: '1.2 km',
-          price: '₹450',
-          rating: '4.9',
-          isPro: true,
-          image:
-              'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=200',
-        ),
-        const SizedBox(height: 16),
-        _buildCaretakerItem(
-          name: 'Anjali Verma',
-          role: 'Cat & Kitten Expert',
-          dist: '2.4 km',
-          price: '₹500',
-          rating: '4.8',
-          isPro: false,
-          image:
-              'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200',
-        ),
-      ],
+  Widget _buildFeaturedCaretakers(BuildContext context, WidgetRef ref) {
+    final caretakersAsync = ref.watch(caretakerStreamProvider);
+    final authState = ref.watch(authProvider);
+
+    return caretakersAsync.when(
+      data: (caretakers) {
+        if (caretakers.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(40.0),
+              child: Text('No verified professionals nearby yet.',
+                  style: TextStyle(color: Colors.black45)),
+            ),
+          );
+        }
+
+        // Calculate and sort by distance
+        final user = authState is AuthAuthenticated ? authState.user : null;
+
+        final caretakersWithDist = caretakers.map((c) {
+          double? distInKm;
+          if (user != null &&
+              user.latitude != null &&
+              user.longitude != null &&
+              c.latitude != null &&
+              c.longitude != null) {
+            double meters = Geolocator.distanceBetween(
+                user.latitude!, user.longitude!, c.latitude!, c.longitude!);
+
+            distInKm = meters / 1000;
+          }
+          return {'caretaker': c, 'distance': distInKm};
+        }).toList();
+
+        // Sort by distance (nearby first)
+        caretakersWithDist.sort((a, b) {
+          if (a['distance'] == null) return 1;
+          if (b['distance'] == null) return -1;
+          return (a['distance'] as double).compareTo(b['distance'] as double);
+        });
+
+        return Column(
+          children: caretakersWithDist.map((item) {
+            final caretaker = item['caretaker'] as Caretaker;
+            final distance = item['distance'] as double?;
+            final distStr = distance != null
+                ? '${distance.toStringAsFixed(1)} km away'
+                : 'Nearby';
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildCaretakerItem(
+                name: caretaker.name,
+                role: caretaker.specialties.take(2).join(' & ') + ' Expert',
+                dist: distStr,
+                price: '₹${caretaker.price}',
+                rating: caretaker.rating,
+                isPro: caretaker.isVerified,
+                image: caretaker.profileUrl ??
+                    'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=200',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BookingScreen(caretaker: caretaker),
+                    ),
+                  );
+                },
+              ),
+            );
+          }).toList(),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Text('Error loading caretakers: $err'),
     );
   }
 
@@ -256,90 +434,96 @@ class HomeScreen extends ConsumerWidget {
     required String rating,
     required bool isPro,
     required String image,
+    required VoidCallback onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.04)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: CachedNetworkImage(
-              imageUrl: image,
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Container(
-                color: AppTheme.safetyTeal.withOpacity(0.1),
-                child: const Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.black.withOpacity(0.04)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: CachedNetworkImage(
+                imageUrl: image,
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  color: AppTheme.safetyTeal.withOpacity(0.1),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   ),
                 ),
-              ),
-              errorWidget: (context, url, error) => Container(
-                color: AppTheme.safetyTeal.withOpacity(0.1),
-                child:
-                    const Icon(Icons.error_outline, color: AppTheme.safetyTeal),
+                errorWidget: (context, url, error) => Container(
+                  color: AppTheme.safetyTeal.withOpacity(0.1),
+                  child: const Icon(Icons.error_outline,
+                      color: AppTheme.safetyTeal),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(name,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
-                    const SizedBox(width: 6),
-                    Icon(
-                      Icons.verified_user_rounded,
-                      color: isPro ? AppTheme.verifyGold : AppTheme.safetyTeal,
-                      size: 16,
-                    ),
-                  ],
-                ),
-                Text('$role • $dist',
-                    style:
-                        const TextStyle(fontSize: 12, color: Colors.black45)),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.star_rounded,
-                        color: AppTheme.verifyGold, size: 16),
-                    Text(' $rating',
-                        style: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.bold)),
-                    const Spacer(),
-                    Text(
-                      '$price/day',
-                      style: const TextStyle(
-                        color: AppTheme.brandBlueGreen,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(name,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16)),
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.verified_user_rounded,
+                        color:
+                            isPro ? AppTheme.verifyGold : AppTheme.safetyTeal,
+                        size: 16,
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                  Text('$role • $dist',
+                      style:
+                          const TextStyle(fontSize: 12, color: Colors.black45)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.star_rounded,
+                          color: AppTheme.verifyGold, size: 16),
+                      Text(' $rating',
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold)),
+                      const Spacer(),
+                      Text(
+                        '$price/hour',
+                        style: const TextStyle(
+                          color: AppTheme.brandBlueGreen,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

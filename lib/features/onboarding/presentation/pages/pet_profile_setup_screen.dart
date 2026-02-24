@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carebridge/core/app_theme.dart';
 import 'package:carebridge/core/auth/auth_provider.dart';
 import 'package:carebridge/shared/widgets/main_layout.dart';
+import 'package:carebridge/shared/presentation/pages/map_selection_screen.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class PetProfileSetupScreen extends ConsumerStatefulWidget {
   const PetProfileSetupScreen({super.key});
@@ -17,6 +19,8 @@ class _PetProfileSetupScreenState extends ConsumerState<PetProfileSetupScreen> {
   final _breedController = TextEditingController();
   String _selectedType = 'Dog';
   String _selectedAge = 'Adult';
+  double? _lat;
+  double? _lng;
   bool _isLoading = false;
 
   @override
@@ -131,6 +135,54 @@ class _PetProfileSetupScreenState extends ConsumerState<PetProfileSetupScreen> {
                   _buildAgeChip('Senior'),
                 ],
               ),
+              const SizedBox(height: 32),
+              const Text('Your Location (To find nearby help)',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: () async {
+                  final result = await Navigator.push<LatLng>(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const MapSelectionScreen()),
+                  );
+                  if (result != null) {
+                    setState(() {
+                      _lat = result.latitude;
+                      _lng = result.longitude;
+                    });
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: _lat != null
+                            ? AppTheme.brandBlueGreen
+                            : Colors.black.withOpacity(0.05)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.location_on_rounded,
+                          color: _lat != null
+                              ? AppTheme.brandBlueGreen
+                              : Colors.black38),
+                      const SizedBox(width: 12),
+                      Text(
+                        _lat != null
+                            ? 'Location Captured ✅'
+                            : 'Select your area on map',
+                        style: TextStyle(
+                            color: _lat != null
+                                ? AppTheme.brandBlueGreen
+                                : Colors.black38),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 60),
               SizedBox(
                 width: double.infinity,
@@ -139,7 +191,7 @@ class _PetProfileSetupScreenState extends ConsumerState<PetProfileSetupScreen> {
                   onPressed: _isLoading
                       ? null
                       : () async {
-                          if (_nameController.text.isNotEmpty) {
+                          if (_nameController.text.isNotEmpty && _lat != null) {
                             setState(() => _isLoading = true);
                             await ref
                                 .read(authProvider.notifier)
@@ -149,6 +201,10 @@ class _PetProfileSetupScreenState extends ConsumerState<PetProfileSetupScreen> {
                                   breed: _breedController.text,
                                   age: _selectedAge,
                                 );
+                            await ref
+                                .read(authProvider.notifier)
+                                .updateLocation(_lat!, _lng!);
+
                             setState(() => _isLoading = false);
 
                             if (!mounted) return;
@@ -161,8 +217,8 @@ class _PetProfileSetupScreenState extends ConsumerState<PetProfileSetupScreen> {
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                  content:
-                                      Text('Please enter your pet\'s name')),
+                                  content: Text(
+                                      'Please enter pet name and select location')),
                             );
                           }
                         },

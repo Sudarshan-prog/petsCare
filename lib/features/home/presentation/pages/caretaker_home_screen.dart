@@ -4,6 +4,10 @@ import 'package:carebridge/core/app_theme.dart';
 import 'package:carebridge/core/auth/auth_provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:carebridge/core/providers/caretaker_provider.dart';
+import 'package:carebridge/features/booking/presentation/providers/booking_provider.dart';
+import 'package:carebridge/features/booking/data/models/booking_model.dart';
+import 'package:intl/intl.dart';
 
 class CaretakerHomeScreen extends ConsumerWidget {
   const CaretakerHomeScreen({super.key});
@@ -13,39 +17,55 @@ class CaretakerHomeScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final user = authState is AuthAuthenticated ? authState.user : null;
 
-    return Scaffold(
-      backgroundColor: AppTheme.softCream,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(context, user?.name ?? 'Professional'),
-                const SizedBox(height: 30),
-                _buildEarningsCard(context),
-                const SizedBox(height: 30),
-                _buildStatusToggle(context),
-                const SizedBox(height: 40),
-                _buildSectionLabel('Incoming Requests'),
-                const SizedBox(height: 16),
-                _buildRequestList(context),
-                const SizedBox(height: 40),
-                _buildSectionLabel('Business Toolkit'),
-                const SizedBox(height: 16),
-                _buildToolGrid(context),
-                const SizedBox(height: 40),
-              ],
+    if (user == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final caretakerAsync = ref.watch(singleCaretakerProvider(user.id));
+    final bookingsAsync = ref.watch(caretakerBookingsStreamProvider);
+
+    return caretakerAsync.when(
+      data: (caretaker) => Scaffold(
+        backgroundColor: AppTheme.softCream,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context, user.name,
+                      caretaker?.profileUrl ?? user.profileUrl),
+                  const SizedBox(height: 30),
+                  _buildEarningsCard(
+                      context, caretaker, bookingsAsync.value ?? []),
+                  const SizedBox(height: 30),
+                  _buildStatusToggle(context),
+                  const SizedBox(height: 40),
+                  _buildSectionLabel('Incoming Requests'),
+                  const SizedBox(height: 16),
+                  _buildRequestList(context, ref, bookingsAsync),
+                  const SizedBox(height: 40),
+                  _buildSectionLabel('Business Toolkit'),
+                  const SizedBox(height: 16),
+                  _buildToolGrid(context),
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
           ),
         ),
       ),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (err, stack) => Scaffold(body: Center(child: Text('Error: $err'))),
     );
   }
 
-  Widget _buildHeader(BuildContext context, String name) {
+  Widget _buildHeader(BuildContext context, String name, String? profileUrl) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -77,14 +97,15 @@ class CaretakerHomeScreen extends ConsumerWidget {
         CircleAvatar(
           radius: 25,
           backgroundColor: AppTheme.safetyTeal.withOpacity(0.1),
-          backgroundImage: const CachedNetworkImageProvider(
+          backgroundImage: CachedNetworkImageProvider(profileUrl ??
               'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=200'),
         ),
       ],
     );
   }
 
-  Widget _buildEarningsCard(BuildContext context) {
+  Widget _buildEarningsCard(
+      BuildContext context, Caretaker? caretaker, List<Booking> bookings) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -112,9 +133,9 @@ class CaretakerHomeScreen extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStat('Active Pets', '03'),
+              _buildStat('Total Bookings', bookings.length.toString()),
               Container(width: 1, height: 30, color: Colors.white24),
-              _buildStat('Rating', '4.9 ⭐'),
+              _buildStat('Rating', '${caretaker?.rating ?? '5.0'} ⭐'),
             ],
           ),
         ],
@@ -177,56 +198,186 @@ class CaretakerHomeScreen extends ConsumerWidget {
             fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87));
   }
 
-  Widget _buildRequestList(BuildContext context) {
-    return Column(
-      children: [
-        _buildRequestItem(
-            'Buddy', 'Golden Retriever', 'Today, 2:00 PM', '₹ 500'),
-        const SizedBox(height: 12),
-        _buildRequestItem('Luna', 'Persian Cat', 'Tomorrow, 10:00 AM', '₹ 450'),
-      ],
+  Widget _buildRequestList(BuildContext context, WidgetRef ref,
+      AsyncValue<List<Booking>> bookingsAsync) {
+    return bookingsAsync.when(
+      data: (bookings) {
+        if (bookings.isEmpty) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.black.withOpacity(0.04)),
+            ),
+            child: Column(
+              children: [
+                Icon(FontAwesomeIcons.calendarCheck,
+                    color: AppTheme.safetyTeal.withOpacity(0.2), size: 40),
+                const SizedBox(height: 16),
+                const Text(
+                  'No active requests yet',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, color: Colors.black87),
+                ),
+                const Text(
+                  'New pet bookings will appear here.',
+                  style: TextStyle(fontSize: 12, color: Colors.black45),
+                ),
+              ],
+            ),
+          );
+        }
+        return Column(
+          children: bookings
+              .map((booking) => _buildBookingItem(ref, booking))
+              .toList(),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, __) => Text('Error: $e'),
     );
   }
 
-  Widget _buildRequestItem(
-      String petName, String type, String time, String price) {
+  Widget _buildBookingItem(WidgetRef ref, Booking booking) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.03)),
+        border: Border.all(color: Colors.black.withOpacity(0.05)),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-                color: AppTheme.safetyTeal.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16)),
-            child: const Icon(FontAwesomeIcons.paw,
-                color: AppTheme.safetyTeal, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(petName,
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                    color: AppTheme.safetyTeal.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16)),
+                child: const Icon(FontAwesomeIcons.paw,
+                    color: AppTheme.safetyTeal, size: 20),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(booking.petName,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16)),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppTheme.brandBlueGreen.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${booking.hours}h',
+                            style: const TextStyle(
+                                color: AppTheme.brandBlueGreen,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                        '${booking.serviceType} • ${DateFormat('MMM d').format(booking.date)} at ${booking.timeSlot}',
+                        style: const TextStyle(
+                            color: Colors.black45, fontSize: 12)),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '₹${booking.totalPrice}',
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16)),
-                Text('$type • $time',
-                    style:
-                        const TextStyle(color: Colors.black45, fontSize: 12)),
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.brandBlueGreen),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(booking.status).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      booking.status.toUpperCase(),
+                      style: TextStyle(
+                          color: _getStatusColor(booking.status),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          if (booking.status == 'pending') ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => ref
+                        .read(bookingProvider.notifier)
+                        .updateBookingStatus(booking.id!, 'cancelled'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.alertRed,
+                      side: const BorderSide(color: AppTheme.alertRed),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Reject'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => ref
+                        .read(bookingProvider.notifier)
+                        .updateBookingStatus(booking.id!, 'confirmed'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.safetyTeal,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: const Text('Accept'),
+                  ),
+                ),
               ],
             ),
-          ),
-          Text(price,
-              style: const TextStyle(
-                  color: AppTheme.safetyTeal, fontWeight: FontWeight.bold)),
+          ],
         ],
       ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'pending':
+        return Colors.orange;
+      case 'confirmed':
+        return Colors.green;
+      case 'cancelled':
+        return AppTheme.alertRed;
+      default:
+        return Colors.grey;
+    }
   }
 
   Widget _buildToolGrid(BuildContext context) {

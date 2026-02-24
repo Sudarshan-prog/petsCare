@@ -11,6 +11,9 @@ class AppUser {
   final String email;
   final String? profileUrl;
   final String? role; // 'owner' or 'caretaker'
+  final String? phoneNumber;
+  final double? latitude;
+  final double? longitude;
 
   AppUser({
     required this.id,
@@ -18,15 +21,27 @@ class AppUser {
     required this.email,
     this.profileUrl,
     this.role,
+    this.phoneNumber,
+    this.latitude,
+    this.longitude,
   });
 
-  factory AppUser.fromFirebase(User user, {String? role}) {
+  factory AppUser.fromFirebase(
+    User user, {
+    String? role,
+    String? phoneNumber,
+    double? latitude,
+    double? longitude,
+  }) {
     return AppUser(
       id: user.uid,
       name: user.displayName ?? 'User',
       email: user.email ?? '',
       profileUrl: user.photoURL,
       role: role,
+      phoneNumber: phoneNumber,
+      latitude: latitude,
+      longitude: longitude,
     );
   }
 
@@ -37,6 +52,9 @@ class AppUser {
       'email': email,
       'profileUrl': profileUrl,
       'role': role,
+      'phoneNumber': phoneNumber,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 }
@@ -78,7 +96,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
           final doc = await _firestore.collection('users').doc(user.uid).get();
           final data = doc.data();
           final String? role = data != null ? data['role'] as String? : null;
-          state = AuthAuthenticated(AppUser.fromFirebase(user, role: role));
+          final String? phone =
+              data != null ? data['phoneNumber'] as String? : null;
+          final double? lat =
+              data != null ? (data['latitude'] as num?)?.toDouble() : null;
+          final double? lng =
+              data != null ? (data['longitude'] as num?)?.toDouble() : null;
+
+          state = AuthAuthenticated(AppUser.fromFirebase(
+            user,
+            role: role,
+            phoneNumber: phone,
+            latitude: lat,
+            longitude: lng,
+          ));
         } catch (e) {
           // Fallback if firestore fails
           state = AuthAuthenticated(AppUser.fromFirebase(user));
@@ -126,8 +157,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
             .collection('users')
             .doc(user.uid)
             .update({'role': role});
+
+        final doc = await _firestore.collection('users').doc(user.uid).get();
+        final data = doc.data();
+
         // Refresh state
-        state = AuthAuthenticated(AppUser.fromFirebase(user, role: role));
+        state = AuthAuthenticated(AppUser.fromFirebase(
+          user,
+          role: role,
+          phoneNumber: data?['phoneNumber'],
+          latitude: (data?['latitude'] as num?)?.toDouble(),
+          longitude: (data?['longitude'] as num?)?.toDouble(),
+        ));
       } catch (e) {
         debugPrint("Error saving role: $e");
       }
@@ -161,10 +202,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String bio,
     required List<String> specialties,
     required String price,
+    required String phoneNumber,
+    required double latitude,
+    required double longitude,
   }) async {
     final user = _auth.currentUser;
     if (user != null) {
       try {
+        // Update User Doc with phone and location
+        await _firestore.collection('users').doc(user.uid).update({
+          'phoneNumber': phoneNumber,
+          'latitude': latitude,
+          'longitude': longitude,
+        });
+
+        // Add/Update Caretaker Doc
         await _firestore.collection('caretakers').doc(user.uid).set({
           'id': user.uid,
           'name': user.displayName,
@@ -172,12 +224,52 @@ class AuthNotifier extends StateNotifier<AuthState> {
           'bio': bio,
           'specialties': specialties,
           'price': price,
+          'phoneNumber': phoneNumber,
+          'latitude': latitude,
+          'longitude': longitude,
           'rating': '5.0',
-          'isVerifed': false,
+          'isVerified': false,
+          'profileUrl': user.photoURL,
           'createdAt': FieldValue.serverTimestamp(),
         });
+
+        // Refresh Auth State
+        final doc = await _firestore.collection('users').doc(user.uid).get();
+        final data = doc.data();
+        state = AuthAuthenticated(AppUser.fromFirebase(
+          user,
+          role: data?['role'],
+          phoneNumber: phoneNumber,
+          latitude: latitude,
+          longitude: longitude,
+        ));
       } catch (e) {
         debugPrint("Error saving caretaker: $e");
+      }
+    }
+  }
+
+  Future<void> updateLocation(double lat, double lng) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      try {
+        await _firestore.collection('users').doc(user.uid).update({
+          'latitude': lat,
+          'longitude': lng,
+        });
+
+        final doc = await _firestore.collection('users').doc(user.uid).get();
+        final data = doc.data();
+
+        state = AuthAuthenticated(AppUser.fromFirebase(
+          user,
+          role: data?['role'],
+          phoneNumber: data?['phoneNumber'],
+          latitude: lat,
+          longitude: lng,
+        ));
+      } catch (e) {
+        debugPrint("Error updating location: $e");
       }
     }
   }
