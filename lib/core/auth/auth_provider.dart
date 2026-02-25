@@ -30,6 +30,14 @@ class AppUser {
     this.longitude,
   });
 
+  /// ARCHITECT: Returns either the stored profile URL or a dynamically generated DiceBear avatar.
+  /// This ensures zero Firebase Storage usage for profile pictures.
+  String get effectiveProfileUrl {
+    if (profileUrl != null && profileUrl!.isNotEmpty) return profileUrl!;
+    // generates a unique high-quality adventurer avatar based on the user's unique ID
+    return 'https://api.dicebear.com/7.x/adventurer/png?seed=$id&backgroundColor=b6e3f4,c0aede,d1d4f9';
+  }
+
   factory AppUser.fromFirebase(
     User user, {
     String? role,
@@ -171,6 +179,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String phoneNumber,
     required double latitude,
     required double longitude,
+    Map<String, double>? serviceFees,
   }) async {
     if (state is AuthAuthenticated) {
       final user = (state as AuthAuthenticated).user;
@@ -196,6 +205,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           'rating': 5.0,
           'isVerified': false,
           'profileUrl': user.profileUrl,
+          'serviceFees': serviceFees,
         });
 
         final updatedUser = await _authRepository.getUserData(user.id);

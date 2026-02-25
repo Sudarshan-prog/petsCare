@@ -21,7 +21,7 @@ class HomeScreen extends ConsumerWidget {
 
     if (authState is AuthAuthenticated) {
       userName = authState.user.name.split(' ')[0]; // Just the first name
-      profileImg = authState.user.profileUrl ?? profileImg;
+      profileImg = authState.user.effectiveProfileUrl;
     }
 
     return Scaffold(
@@ -165,14 +165,15 @@ class HomeScreen extends ConsumerWidget {
             _buildSectionTitle(context, 'My Bookings'),
             const SizedBox(height: 16),
             SizedBox(
-              height: 350,
+              height: 360,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
                 itemCount: sortedBookings.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 16),
                 itemBuilder: (context, index) {
-                  return _buildOwnerBookingItem(context, sortedBookings[index]);
+                  return _buildOwnerBookingItem(
+                      context, ref, sortedBookings[index]);
                 },
               ),
             ),
@@ -188,7 +189,8 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildOwnerBookingItem(BuildContext context, Booking booking) {
+  Widget _buildOwnerBookingItem(
+      BuildContext context, WidgetRef ref, Booking booking) {
     // ARCHITECTURAL DIAGNOSTIC: Log data to terminal
     debugPrint("--- OWNER_BOOKING_CARD ---");
     debugPrint("ID: ${booking.id}");
@@ -253,7 +255,7 @@ class HomeScreen extends ConsumerWidget {
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           Text(
-            '${booking.serviceType} • ${booking.petName}',
+            '${booking.services.isEmpty ? 'General Care' : booking.services.join(', ')} • ${booking.petName}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.black45, fontSize: 12),
@@ -316,11 +318,11 @@ class HomeScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(16),
                     child: CachedNetworkImage(
                       imageUrl: booking.statusImageUrl!,
-                      height: 160,
+                      height: 120,
                       width: double.infinity,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Container(
-                        height: 160,
+                        height: 120,
                         width: double.infinity,
                         color: AppTheme.brandBlueGreen.withOpacity(0.05),
                         child: const Center(
@@ -380,6 +382,54 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+          if (booking.status == 'confirmed') ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Confirm Pet Handover?'),
+                      content: const Text(
+                          'Have you received your pet safely? This will end the session and purge all status photos to save storage cost.'),
+                      actions: [
+                        TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Not Yet')),
+                        TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Yes, Finished',
+                                style: TextStyle(color: AppTheme.safetyTeal))),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed == true) {
+                    await ref
+                        .read(bookingProvider.notifier)
+                        .updateBookingStatus(booking.id!, 'completed');
+                    ref.invalidate(ownerBookingsStreamProvider);
+                  }
+                },
+                icon: const Icon(Icons.check_circle_outline_rounded, size: 14),
+                label: const Text('Finish Job',
+                    style:
+                        TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.safetyTeal,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: const StadiumBorder(),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
             ),
           ],

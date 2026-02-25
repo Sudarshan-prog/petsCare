@@ -22,7 +22,7 @@ class BookingScreen extends ConsumerStatefulWidget {
 class _BookingScreenState extends ConsumerState<BookingScreen> {
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   String _selectedTimeSlot = '10:00 AM';
-  String _selectedService = 'General Care';
+  final Set<String> _selectedServices = {};
   int _selectedHours = 1;
   Pet? _selectedPet;
   final TextEditingController _notesController = TextEditingController();
@@ -39,9 +39,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.caretaker.specialties.isNotEmpty) {
-      _selectedService = widget.caretaker.specialties.first;
-    }
+    // ARCHITECT: Do not pre-select any service, allow user to decide if they want any extras
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -80,8 +78,13 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
     final authState = ref.read(authProvider);
     if (authState is AuthAuthenticated) {
-      final double pricePerHour = widget.caretaker.price;
-      final total = pricePerHour * _selectedHours;
+      // ARCHITECT: Dynamic Multi-Service Pricing Logic (Handles 0 or many services)
+      final double basePrice = widget.caretaker.price * _selectedHours;
+      double totalPremiums = 0.0;
+      for (var service in _selectedServices) {
+        totalPremiums += widget.caretaker.serviceFees[service] ?? 0.0;
+      }
+      final total = basePrice + totalPremiums;
 
       final booking = Booking(
         caretakerId: widget.caretaker.id,
@@ -92,7 +95,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         petName: _selectedPet!.name,
         date: _selectedDate,
         timeSlot: _selectedTimeSlot,
-        serviceType: _selectedService,
+        services: _selectedServices.toList(),
         hours: _selectedHours,
         totalPrice: total,
         notes: _notesController.text,
@@ -144,10 +147,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             children: [
               _buildCaretakerSummary(),
               const SizedBox(height: 30),
-              _buildSectionTitle('Select Service'),
-              const SizedBox(height: 12),
-              _buildServiceSelector(),
-              const SizedBox(height: 30),
+              if (widget.caretaker.serviceFees.isNotEmpty) ...[
+                _buildSectionTitle('Select Service'),
+                const SizedBox(height: 12),
+                _buildServiceSelector(),
+                const SizedBox(height: 30),
+              ],
               _buildSectionTitle('Select Pet'),
               const SizedBox(height: 12),
               _buildPetSelector(petsAsync),
@@ -280,24 +285,63 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
   Widget _buildServiceSelector() {
     return Wrap(
-      spacing: 10,
-      children: widget.caretaker.specialties.map((service) {
-        final isSelected = _selectedService == service;
-        return FilterChip(
-          label: Text(service),
-          selected: isSelected,
-          onSelected: (val) => setState(() => _selectedService = service),
-          selectedColor: AppTheme.brandBlueGreen.withOpacity(0.2),
-          checkmarkColor: AppTheme.brandBlueGreen,
-          labelStyle: TextStyle(
-            color: isSelected ? AppTheme.brandBlueGreen : Colors.black54,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: isSelected ? AppTheme.brandBlueGreen : Colors.transparent,
+      spacing: 12,
+      runSpacing: 12,
+      children: widget.caretaker.serviceFees.keys.map((service) {
+        final isSelected = _selectedServices.contains(service);
+        final premium = widget.caretaker.serviceFees[service] ?? 0.0;
+        return InkWell(
+          onTap: () {
+            setState(() {
+              if (isSelected) {
+                _selectedServices.remove(service);
+              } else {
+                _selectedServices.add(service);
+              }
+            });
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isSelected ? AppTheme.brandBlueGreen : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected ? AppTheme.brandBlueGreen : Colors.black12,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                          color: AppTheme.brandBlueGreen.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4))
+                    ]
+                  : null,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  service,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.black87,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '+₹${premium.toStringAsFixed(0)}',
+                  style: TextStyle(
+                    color: isSelected
+                        ? Colors.white.withOpacity(0.8)
+                        : AppTheme.safetyTeal,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -478,8 +522,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
   Widget _buildBottomBar(AsyncValue<void> bookingState) {
     final isLoading = bookingState is AsyncLoading;
-    final double pricePerHour = widget.caretaker.price;
-    final total = pricePerHour * _selectedHours;
+    final double basePrice = widget.caretaker.price * _selectedHours;
+    double totalPremiums = 0.0;
+    for (var s in _selectedServices) {
+      totalPremiums += widget.caretaker.serviceFees[s] ?? 0.0;
+    }
+    final total = basePrice + totalPremiums;
 
     return Container(
       padding: const EdgeInsets.all(24),

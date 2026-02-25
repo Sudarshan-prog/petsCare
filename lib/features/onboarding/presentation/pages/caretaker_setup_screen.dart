@@ -31,6 +31,14 @@ class _CaretakerSetupScreenState extends ConsumerState<CaretakerSetupScreen> {
     {'name': 'Medical Care', 'icon': FontAwesomeIcons.suitcaseMedical},
   ];
 
+  final Map<String, double> _availableServices = {
+    'Walking': 50.0,
+    'Bathing': 200.0,
+    'Poop Cleanup': 150.0,
+    'Feeding': 30.0,
+  };
+  final Set<String> _offeredServices = {};
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -87,6 +95,36 @@ class _CaretakerSetupScreenState extends ConsumerState<CaretakerSetupScreen> {
                 runSpacing: 12,
                 children:
                     _specialties.map((s) => _buildSpecialtyChip(s)).toList(),
+              ),
+              const SizedBox(height: 24),
+              const Text('Premium Services Offered:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: _availableServices.keys.map((service) {
+                  final isSelected = _offeredServices.contains(service);
+                  return FilterChip(
+                    label: Text('$service (+₹${_availableServices[service]})'),
+                    selected: isSelected,
+                    onSelected: (val) {
+                      setState(() {
+                        if (val) {
+                          _offeredServices.add(service);
+                        } else {
+                          _offeredServices.remove(service);
+                        }
+                      });
+                    },
+                    selectedColor: AppTheme.brandBlueGreen,
+                    checkmarkColor: Colors.white,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : Colors.black87,
+                      fontSize: 12,
+                    ),
+                  );
+                }).toList(),
               ),
               const SizedBox(height: 32),
               const Text('Base Price (per hour)',
@@ -244,6 +282,11 @@ class _CaretakerSetupScreenState extends ConsumerState<CaretakerSetupScreen> {
 
     setState(() => _isLoading = true);
 
+    final Map<String, double> serviceFees = {};
+    for (var s in _offeredServices) {
+      serviceFees[s] = _availableServices[s]!;
+    }
+
     await ref.read(authProvider.notifier).saveCaretakerProfile(
           bio: _bioController.text,
           specialties: _selectedSpecialties,
@@ -251,6 +294,7 @@ class _CaretakerSetupScreenState extends ConsumerState<CaretakerSetupScreen> {
           phoneNumber: _phoneController.text,
           latitude: _lat!,
           longitude: _lng!,
+          serviceFees: serviceFees,
         );
 
     setState(() => _isLoading = false);

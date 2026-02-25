@@ -298,7 +298,7 @@ class CaretakerHomeScreen extends ConsumerWidget {
                       ],
                     ),
                     Text(
-                        '${booking.serviceType} • ${DateFormat('MMM d').format(booking.date)} at ${booking.timeSlot}',
+                        '${booking.services.isEmpty ? 'General Care' : booking.services.join(', ')} • ${DateFormat('MMM d').format(booking.date)} at ${booking.timeSlot}',
                         style: const TextStyle(
                             color: Colors.black45, fontSize: 12)),
                   ],

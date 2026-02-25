@@ -36,8 +36,8 @@ class ProfileScreen extends ConsumerWidget {
                       child: CircleAvatar(
                         radius: 60,
                         backgroundImage: NetworkImage(
-                          user?.profileUrl ??
-                              'https://images.pravatar.cc/150?img=11',
+                          user?.effectiveProfileUrl ??
+                              'https://api.dicebear.com/7.x/adventurer/png?seed=fallback',
                         ),
                       ),
                     ),

@@ -10,7 +10,8 @@ class Caretaker {
   final String? email;
   final String? bio;
   final List<String> specialties;
-  final double price;
+  final double price; // Base hourly rate
+  final Map<String, double> serviceFees; // Dynamic premiums for specific tasks
   final double rating;
   final bool isVerified;
   final String? profileUrl;
@@ -25,6 +26,12 @@ class Caretaker {
     this.bio,
     this.specialties = const [],
     required this.price,
+    this.serviceFees = const {
+      'Walking': 50.0,
+      'Bathing': 200.0,
+      'Poop Cleanup': 150.0,
+      'Feeding': 30.0,
+    },
     this.rating = 5.0,
     this.isVerified = false,
     this.profileUrl,
@@ -51,6 +58,10 @@ class Caretaker {
       bio: data['bio'],
       specialties: List<String>.from(data['specialties'] ?? []),
       price: parseDouble(data['price'], 0.0),
+      serviceFees: (data['serviceFees'] as Map<String, dynamic>?)?.map(
+            (key, value) => MapEntry(key, parseDouble(value, 0.0)),
+          ) ??
+          {},
       rating: parseDouble(data['rating'], 5.0),
       isVerified: data['isVerified'] ?? false,
       profileUrl: data['profileUrl'],

@@ -10,7 +10,7 @@ class Booking {
   final String petName;
   final DateTime date;
   final String timeSlot;
-  final String serviceType;
+  final List<String> services;
   final int hours;
   final double totalPrice;
   final String status; // 'pending', 'confirmed', 'completed', 'cancelled'
@@ -27,7 +27,7 @@ class Booking {
     required this.petName,
     required this.date,
     required this.timeSlot,
-    required this.serviceType,
+    required this.services,
     required this.hours,
     required this.totalPrice,
     this.status = 'pending',
@@ -45,7 +45,7 @@ class Booking {
       'petName': petName,
       'date': date.toIso8601String(),
       'timeSlot': timeSlot,
-      'serviceType': serviceType,
+      'services': services,
       'hours': hours,
       'totalPrice': totalPrice,
       'status': status,
@@ -82,7 +82,7 @@ class Booking {
       petName: data['petName'] ?? '',
       date: DateTime.parse(data['date'] ?? DateTime.now().toIso8601String()),
       timeSlot: data['timeSlot'] ?? '',
-      serviceType: data['serviceType'] ?? '',
+      services: List<String>.from(data['services'] ?? []),
       hours: parseInt(data['hours'], 1),
       totalPrice: parseDouble(data['totalPrice'], 0.0),
       status: data['status'] ?? 'pending',
