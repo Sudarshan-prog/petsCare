@@ -35,19 +35,32 @@ class Caretaker {
 
   factory Caretaker.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+    // Defensive parsing for num/double fields
+    double parseDouble(dynamic value, double fallback) {
+      if (value == null) return fallback;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? fallback;
+      return fallback;
+    }
+
     return Caretaker(
       id: doc.id,
       name: data['name'] ?? 'Professional',
       email: data['email'],
       bio: data['bio'],
       specialties: List<String>.from(data['specialties'] ?? []),
-      price: (data['price'] as num?)?.toDouble() ?? 0.0,
-      rating: (data['rating'] as num?)?.toDouble() ?? 5.0,
+      price: parseDouble(data['price'], 0.0),
+      rating: parseDouble(data['rating'], 5.0),
       isVerified: data['isVerified'] ?? false,
       profileUrl: data['profileUrl'],
       phoneNumber: data['phoneNumber'],
-      latitude: (data['latitude'] as num?)?.toDouble(),
-      longitude: (data['longitude'] as num?)?.toDouble(),
+      latitude: parseDouble(data['latitude'], 0.0) == 0.0
+          ? null
+          : parseDouble(data['latitude'], 0.0),
+      longitude: parseDouble(data['longitude'], 0.0) == 0.0
+          ? null
+          : parseDouble(data['longitude'], 0.0),
     );
   }
 }

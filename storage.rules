@@ -1,0 +1,24 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper: Is the user logged in?
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // 1. Profile photos: Anyone authenticated can read, only the owner can write
+    match /profiles/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 2. Booking status photos: Anyone authenticated can read, caretakers involved can write
+    match /bookings/{bookingId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      // In a production app, we would verify the role via Firestore, 
+      // but for Phase 1, we allow authenticated write to the specific booking folder.
+      allow write: if isAuthenticated();
+    }
+  }
+}

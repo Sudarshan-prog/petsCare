@@ -4,13 +4,11 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:carebridge/core/auth/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:carebridge/core/providers/caretaker_provider.dart';
 
-import 'package:carebridge/features/booking/presentation/pages/booking_screen.dart';
-import 'package:carebridge/shared/widgets/premium_glass_card.dart';
 import 'package:carebridge/features/booking/presentation/providers/booking_provider.dart';
 import 'package:carebridge/features/booking/data/models/booking_model.dart';
-import 'package:intl/intl.dart';
+import 'package:carebridge/core/providers/caretaker_provider.dart';
+import 'package:carebridge/features/booking/presentation/pages/booking_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -148,7 +146,14 @@ class HomeScreen extends ConsumerWidget {
 
     return bookingsAsync.when(
       data: (bookings) {
-        if (bookings.isEmpty) return const SizedBox.shrink();
+        debugPrint("FETCHED_BOOKINGS_COUNT: ${bookings.length}");
+        if (bookings.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Text('You have no active bookings yet.',
+                style: TextStyle(color: Colors.black26, fontSize: 12)),
+          );
+        }
 
         // Sort bookings by date (most recent first)
         final sortedBookings = List<Booking>.from(bookings)
@@ -160,26 +165,36 @@ class HomeScreen extends ConsumerWidget {
             _buildSectionTitle(context, 'My Bookings'),
             const SizedBox(height: 16),
             SizedBox(
-              height: 160,
+              height: 350,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
                 itemCount: sortedBookings.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 16),
                 itemBuilder: (context, index) {
-                  return _buildOwnerBookingItem(sortedBookings[index]);
+                  return _buildOwnerBookingItem(context, sortedBookings[index]);
                 },
               ),
             ),
           ],
         );
       },
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Text('Error loading bookings: $err',
+            style: const TextStyle(color: AppTheme.alertRed, fontSize: 12)),
+      ),
     );
   }
 
-  Widget _buildOwnerBookingItem(Booking booking) {
+  Widget _buildOwnerBookingItem(BuildContext context, Booking booking) {
+    // ARCHITECTURAL DIAGNOSTIC: Log data to terminal
+    debugPrint("--- OWNER_BOOKING_CARD ---");
+    debugPrint("ID: ${booking.id}");
+    debugPrint("STATUS: ${booking.status}");
+    debugPrint("IMG_URL: ${booking.statusImageUrl}");
+
     Color statusColor = Colors.orange;
     IconData statusIcon = Icons.access_time_rounded;
 
@@ -228,11 +243,6 @@ class HomeScreen extends ConsumerWidget {
                   fontSize: 10,
                 ),
               ),
-              const Spacer(),
-              Text(
-                DateFormat('MMM d').format(booking.date),
-                style: const TextStyle(color: Colors.black38, fontSize: 10),
-              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -256,6 +266,123 @@ class HomeScreen extends ConsumerWidget {
                 color: AppTheme.brandBlueGreen,
                 fontSize: 12),
           ),
+          if (booking.statusImageUrl != null &&
+              booking.statusImageUrl!.startsWith('http')) ...[
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => Dialog(
+                    backgroundColor: Colors.transparent,
+                    insetPadding: const EdgeInsets.all(10),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            color: Colors.black87,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
+                        ),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: InteractiveViewer(
+                            child: CachedNetworkImage(
+                              imageUrl: booking.statusImageUrl!,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 20,
+                          right: 20,
+                          child: IconButton(
+                            icon: const Icon(Icons.close_rounded,
+                                color: Colors.white, size: 30),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: CachedNetworkImage(
+                      imageUrl: booking.statusImageUrl!,
+                      height: 160,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        height: 160,
+                        width: double.infinity,
+                        color: AppTheme.brandBlueGreen.withOpacity(0.05),
+                        child: const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2)),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 6, horizontal: 10),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.6),
+                            Colors.transparent
+                          ],
+                        ),
+                        borderRadius: const BorderRadius.vertical(
+                            bottom: Radius.circular(16)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.fullscreen_rounded,
+                              color: Colors.white, size: 14),
+                          SizedBox(width: 4),
+                          Text(
+                            'Tap to Expand',
+                            style: TextStyle(color: Colors.white, fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.safetyTeal,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'LIVE PHOTO',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

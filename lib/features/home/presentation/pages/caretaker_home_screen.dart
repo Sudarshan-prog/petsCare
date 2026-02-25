@@ -8,6 +8,8 @@ import 'package:carebridge/core/providers/caretaker_provider.dart';
 import 'package:carebridge/features/booking/presentation/providers/booking_provider.dart';
 import 'package:carebridge/features/booking/data/models/booking_model.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class CaretakerHomeScreen extends ConsumerWidget {
   const CaretakerHomeScreen({super.key});
@@ -236,7 +238,7 @@ class CaretakerHomeScreen extends ConsumerWidget {
         }
         return Column(
           children: bookings
-              .map((booking) => _buildBookingItem(ref, booking))
+              .map((booking) => _buildBookingItem(context, ref, booking))
               .toList(),
         );
       },
@@ -245,7 +247,8 @@ class CaretakerHomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBookingItem(WidgetRef ref, Booking booking) {
+  Widget _buildBookingItem(
+      BuildContext context, WidgetRef ref, Booking booking) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -367,9 +370,94 @@ class CaretakerHomeScreen extends ConsumerWidget {
               ],
             ),
           ],
+          if (booking.statusImageUrl != null) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: CachedNetworkImage(
+                    imageUrl: booking.statusImageUrl!,
+                    height: 50,
+                    width: 50,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Latest Photo Sent',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 13)),
+                      Text('The owner can see this update now.',
+                          style:
+                              TextStyle(color: Colors.black45, fontSize: 11)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (booking.status == 'confirmed') ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _sendPhotoUpdate(context, ref, booking.id!),
+                icon: const Icon(Icons.camera_alt_rounded),
+                label: const Text('Send Life Photo to Owner'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.brandBlueGreen,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  Future<void> _sendPhotoUpdate(
+      BuildContext context, WidgetRef ref, String bookingId) async {
+    final picker = ImagePicker();
+    final XFile? photo = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 70,
+    );
+
+    if (photo != null) {
+      try {
+        await ref
+            .read(bookingProvider.notifier)
+            .sendPhotoUpdate(bookingId, File(photo.path));
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('✨ Update sent to pet owner!'),
+                backgroundColor: AppTheme.safetyTeal),
+          );
+        }
+
+        // FORCE UI REFRESH
+        ref.invalidate(caretakerBookingsStreamProvider);
+        ref.invalidate(ownerBookingsStreamProvider);
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('❌ FAILED: $e'),
+                backgroundColor: AppTheme.alertRed),
+          );
+        }
+      }
+    }
   }
 
   Color _getStatusColor(String status) {

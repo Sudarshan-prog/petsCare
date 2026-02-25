@@ -6,6 +6,8 @@ abstract class IBookingRepository {
   Stream<List<Booking>> getCaretakerBookings(String caretakerId);
   Future<void> createBooking(Booking booking);
   Future<void> updateBookingStatus(String bookingId, String status);
+  Future<void> updateBookingImageUrl(String bookingId, String? imageUrl);
+  Future<Booking?> getBookingById(String bookingId);
 }
 
 class BookingRepository implements IBookingRepository {
@@ -42,5 +44,20 @@ class BookingRepository implements IBookingRepository {
         .collection('bookings')
         .doc(bookingId)
         .update({'status': status});
+  }
+
+  @override
+  Future<void> updateBookingImageUrl(String bookingId, String? imageUrl) {
+    return _firestore
+        .collection('bookings')
+        .doc(bookingId)
+        .update({'statusImageUrl': imageUrl});
+  }
+
+  @override
+  Future<Booking?> getBookingById(String bookingId) async {
+    final doc = await _firestore.collection('bookings').doc(bookingId).get();
+    if (!doc.exists) return null;
+    return Booking.fromFirestore(doc);
   }
 }

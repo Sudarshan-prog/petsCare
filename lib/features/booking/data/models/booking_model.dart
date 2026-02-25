@@ -15,6 +15,7 @@ class Booking {
   final double totalPrice;
   final String status; // 'pending', 'confirmed', 'completed', 'cancelled'
   final String? notes;
+  final String? statusImageUrl;
 
   Booking({
     this.id,
@@ -31,6 +32,7 @@ class Booking {
     required this.totalPrice,
     this.status = 'pending',
     this.notes,
+    this.statusImageUrl,
   });
 
   Map<String, dynamic> toMap() {
@@ -48,12 +50,28 @@ class Booking {
       'totalPrice': totalPrice,
       'status': status,
       'notes': notes,
+      'statusImageUrl': statusImageUrl,
       'createdAt': FieldValue.serverTimestamp(),
     };
   }
 
   factory Booking.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+    double parseDouble(dynamic value, double fallback) {
+      if (value == null) return fallback;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? fallback;
+      return fallback;
+    }
+
+    int parseInt(dynamic value, int fallback) {
+      if (value == null) return fallback;
+      if (value is num) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? fallback;
+      return fallback;
+    }
+
     return Booking(
       id: doc.id,
       caretakerId: data['caretakerId'] ?? '',
@@ -65,10 +83,11 @@ class Booking {
       date: DateTime.parse(data['date'] ?? DateTime.now().toIso8601String()),
       timeSlot: data['timeSlot'] ?? '',
       serviceType: data['serviceType'] ?? '',
-      hours: data['hours'] ?? 1,
-      totalPrice: (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
+      hours: parseInt(data['hours'], 1),
+      totalPrice: parseDouble(data['totalPrice'], 0.0),
       status: data['status'] ?? 'pending',
       notes: data['notes'],
+      statusImageUrl: data['statusImageUrl'],
     );
   }
 }
