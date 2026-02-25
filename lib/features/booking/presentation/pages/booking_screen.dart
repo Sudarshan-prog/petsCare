@@ -9,6 +9,7 @@ import 'package:carebridge/features/booking/presentation/providers/booking_provi
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:carebridge/core/providers/payment_provider.dart';
 
 class BookingScreen extends ConsumerStatefulWidget {
   final Caretaker caretaker;
@@ -39,7 +40,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   @override
   void initState() {
     super.initState();
-    // ARCHITECT: Do not pre-select any service, allow user to decide if they want any extras
+    // ARCHITECT: Pre-initialize payment listeners for smooth commercial checkout
+    Future.microtask(() => ref.read(paymentProvider.notifier).init());
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -78,13 +80,37 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
     final authState = ref.read(authProvider);
     if (authState is AuthAuthenticated) {
-      // ARCHITECT: Dynamic Multi-Service Pricing Logic (Handles 0 or many services)
+      // ARCHITECT: Revenue Model (Base + Premiums + Platform Fee)
       final double basePrice = widget.caretaker.price * _selectedHours;
       double totalPremiums = 0.0;
       for (var service in _selectedServices) {
         totalPremiums += widget.caretaker.serviceFees[service] ?? 0.0;
       }
-      final total = basePrice + totalPremiums;
+      const double platformFee =
+          15.0; // ARCHITECT: Acquisition Price (Aggressive Growth)
+      final total = basePrice + totalPremiums + platformFee;
+
+      // 2. Start Commercial Payment Flow
+      ref.read(paymentProvider.notifier).startPayment(
+            amount: total,
+            contact: authState.user.phoneNumber ?? '',
+            email: authState.user.email,
+            description: 'CareBridge Secure (Incl. Safety Fee: ₹15)',
+          );
+    }
+  }
+
+  void _finalizeBooking(String paymentId) async {
+    final authState = ref.read(authProvider);
+    if (authState is AuthAuthenticated) {
+      // Re-calculate total safely with platform fee
+      final double basePrice = widget.caretaker.price * _selectedHours;
+      double totalPremiums = 0.0;
+      for (var service in _selectedServices) {
+        totalPremiums += widget.caretaker.serviceFees[service] ?? 0.0;
+      }
+      const double platformFee = 15.0;
+      final total = basePrice + totalPremiums + platformFee;
 
       final booking = Booking(
         caretakerId: widget.caretaker.id,
@@ -99,6 +125,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         hours: _selectedHours,
         totalPrice: total,
         notes: _notesController.text,
+        paymentStatus: 'paid',
+        paymentId: paymentId,
       );
 
       await ref.read(bookingProvider.notifier).createBooking(booking);
@@ -130,6 +158,19 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   Widget build(BuildContext context) {
     final petsAsync = ref.watch(userPetsProvider);
     final bookingState = ref.watch(bookingProvider);
+    final paymentState = ref.watch(paymentProvider);
+
+    // ARCHITECT: Listen for payment success to finalize the booking
+    ref.listen(paymentProvider, (previous, next) {
+      if (next.isSuccess && next.paymentId != null) {
+        _finalizeBooking(next.paymentId!);
+      }
+      if (next.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Payment Error: ${next.error}')),
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppTheme.softCream,
@@ -185,7 +226,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomBar(bookingState),
+      bottomNavigationBar: _buildBottomBar(bookingState, paymentState),
     );
   }
 
@@ -520,14 +561,16 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     );
   }
 
-  Widget _buildBottomBar(AsyncValue<void> bookingState) {
-    final isLoading = bookingState is AsyncLoading;
+  Widget _buildBottomBar(
+      AsyncValue<void> bookingState, PaymentState paymentState) {
+    final isLoading = (bookingState is AsyncLoading) || paymentState.isLoading;
     final double basePrice = widget.caretaker.price * _selectedHours;
     double totalPremiums = 0.0;
     for (var s in _selectedServices) {
       totalPremiums += widget.caretaker.serviceFees[s] ?? 0.0;
     }
-    final total = basePrice + totalPremiums;
+    const double platformFee = 15.0;
+    final total = basePrice + totalPremiums + platformFee;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -549,8 +592,18 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Total Price',
-                    style: TextStyle(color: Colors.black38, fontSize: 12)),
+                Row(
+                  children: [
+                    const Text('Total Price',
+                        style: TextStyle(color: Colors.black38, fontSize: 12)),
+                    const SizedBox(width: 4),
+                    Tooltip(
+                      message: 'Base Cost + ₹15 Safety & Trust Fee',
+                      child: Icon(Icons.info_outline,
+                          size: 12, color: Colors.black26),
+                    ),
+                  ],
+                ),
                 Text(
                   '₹${total.toStringAsFixed(0)}',
                   style: const TextStyle(
@@ -574,8 +627,20 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     elevation: 0,
                   ),
                   child: isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Confirm Booking',
+                      ? const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 2)),
+                            SizedBox(height: 4),
+                            Text('Processing...',
+                                style: TextStyle(fontSize: 10)),
+                          ],
+                        )
+                      : const Text('Pay & Book Now',
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold)),
                 ),

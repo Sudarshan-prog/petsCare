@@ -16,6 +16,8 @@ class Booking {
   final String status; // 'pending', 'confirmed', 'completed', 'cancelled'
   final String? notes;
   final String? statusImageUrl;
+  final String paymentStatus; // 'unpaid', 'paid', 'failed'
+  final String? paymentId; // Razorpay payment ID
 
   Booking({
     this.id,
@@ -33,6 +35,8 @@ class Booking {
     this.status = 'pending',
     this.notes,
     this.statusImageUrl,
+    this.paymentStatus = 'unpaid',
+    this.paymentId,
   });
 
   Map<String, dynamic> toMap() {
@@ -51,6 +55,8 @@ class Booking {
       'status': status,
       'notes': notes,
       'statusImageUrl': statusImageUrl,
+      'paymentStatus': paymentStatus,
+      'paymentId': paymentId,
       'createdAt': FieldValue.serverTimestamp(),
     };
   }
@@ -88,6 +94,8 @@ class Booking {
       status: data['status'] ?? 'pending',
       notes: data['notes'],
       statusImageUrl: data['statusImageUrl'],
+      paymentStatus: data['paymentStatus'] ?? 'unpaid',
+      paymentId: data['paymentId'],
     );
   }
 }

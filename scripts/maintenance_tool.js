@@ -34,42 +34,71 @@ const auth = admin.auth();
 const db = admin.firestore();
 
 /**
- * Bulk Delete All Users
- * DANGER: This is permanent!
+ * Nukes All Firestore Collections
  */
-async function deleteAllUsers() {
-    console.log('--- Starting Bulk User Deletion ---');
+async function deleteCollection(collectionPath, batchSize = 100) {
+    const collectionRef = db.collection(collectionPath);
+    const query = collectionRef.orderBy('__name__').limit(batchSize);
 
+    return new Promise((resolve, reject) => {
+        deleteQueryBatch(query, resolve).catch(reject);
+    });
+}
+
+async function deleteQueryBatch(query, resolve) {
+    const snapshot = await query.get();
+
+    const batchSize = snapshot.size;
+    if (batchSize === 0) {
+        resolve();
+        return;
+    }
+
+    const batch = db.batch();
+    snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+    });
+    await batch.commit();
+
+    process.nextTick(() => {
+        deleteQueryBatch(query, resolve);
+    });
+}
+
+async function nukeDatabase() {
+    console.log('\n--- ☢️ STARTING NUCLEAR PURGE ☢️ ---');
+
+    // 1. Delete Auth Users
     let totalDeleted = 0;
-
-    async function processBatch(nextPageToken) {
+    async function processAuthBatch(nextPageToken) {
         const result = await auth.listUsers(1000, nextPageToken);
         const uids = result.users.map(user => user.uid);
-
         if (uids.length > 0) {
-            // Bulk delete from Auth
             await auth.deleteUsers(uids);
-            console.log(`🗑️ Deleted ${uids.length} users from Authentication.`);
+            console.log(`🗑️ Auth: Deleted ${uids.length} users.`);
             totalDeleted += uids.length;
-
-            // Note: This script only deletes from AUTH. 
-            // Firestore data should be deleted using the "Clear Collection" 
-            // feature in Firestore UI, which you've already seen.
         }
-
-        if (result.pageToken) {
-            await processBatch(result.pageToken);
-        }
+        if (result.pageToken) await processAuthBatch(result.pageToken);
     }
 
     try {
-        await processBatch();
-        console.log(`\n✨ SUCCESS: Total users deleted: ${totalDeleted}`);
-        console.log('The database is now clean.');
+        await processAuthBatch();
+
+        // 2. Delete Firestore Collections
+        const collections = ['users', 'caretakers', 'pets', 'bookings'];
+        for (const col of collections) {
+            console.log(`🧹 Firestore: Wiping collection '${col}'...`);
+            await deleteCollection(col);
+        }
+
+        console.log(`\n✨ PROJECT IS NOW CLEAN.`);
+        console.log(`Total Auth Users Purged: ${totalDeleted}`);
+        console.log(`Collections Wiped: ${collections.join(', ')}`);
+        console.log('--- Ready for Demo ---');
     } catch (error) {
-        console.error('❌ ERROR during deletion:', error);
+        console.error('❌ ERROR during purge:', error);
     }
 }
 
 // EXECUTE
-deleteAllUsers();
+nukeDatabase();
