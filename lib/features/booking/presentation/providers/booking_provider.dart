@@ -1,18 +1,19 @@
 import 'package:flutter/foundation.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carebridge/features/booking/data/models/booking_model.dart';
 import 'package:carebridge/core/auth/auth_provider.dart';
 
-class BookingNotifier extends StateNotifier<AsyncValue<void>> {
-  BookingNotifier() : super(const AsyncValue.data(null));
+import 'package:carebridge/features/booking/domain/repositories/booking_repository.dart';
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+class BookingNotifier extends StateNotifier<AsyncValue<void>> {
+  final IBookingRepository _repository;
+
+  BookingNotifier(this._repository) : super(const AsyncValue.data(null));
 
   Future<void> createBooking(Booking booking) async {
     state = const AsyncValue.loading();
     try {
-      await _firestore.collection('bookings').add(booking.toMap());
+      await _repository.createBooking(booking);
       state = const AsyncValue.data(null);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
@@ -21,54 +22,37 @@ class BookingNotifier extends StateNotifier<AsyncValue<void>> {
 
   Future<void> updateBookingStatus(String bookingId, String status) async {
     try {
-      await _firestore.collection('bookings').doc(bookingId).update({
-        'status': status,
-      });
+      await _repository.updateBookingStatus(bookingId, status);
     } catch (e) {
       debugPrint("Error updating booking status: $e");
     }
   }
-
-  Stream<List<Booking>> getCaretakerBookings(String caretakerId) {
-    return _firestore
-        .collection('bookings')
-        .where('caretakerId', isEqualTo: caretakerId)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => Booking.fromFirestore(doc)).toList());
-  }
-
-  Stream<List<Booking>> getOwnerBookings(String ownerId) {
-    return _firestore
-        .collection('bookings')
-        .where('ownerId', isEqualTo: ownerId)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => Booking.fromFirestore(doc)).toList());
-  }
 }
+
+final bookingRepositoryProvider = Provider<IBookingRepository>((ref) {
+  return BookingRepository();
+});
 
 final bookingProvider =
     StateNotifierProvider<BookingNotifier, AsyncValue<void>>((ref) {
-  return BookingNotifier();
+  final repo = ref.watch(bookingRepositoryProvider);
+  return BookingNotifier(repo);
 });
 
 final ownerBookingsStreamProvider = StreamProvider<List<Booking>>((ref) {
   final authState = ref.watch(authProvider);
+  final repo = ref.watch(bookingRepositoryProvider);
   if (authState is AuthAuthenticated) {
-    return ref
-        .read(bookingProvider.notifier)
-        .getOwnerBookings(authState.user.id);
+    return repo.getOwnerBookings(authState.user.id);
   }
   return Stream.value([]);
 });
 
 final caretakerBookingsStreamProvider = StreamProvider<List<Booking>>((ref) {
   final authState = ref.watch(authProvider);
+  final repo = ref.watch(bookingRepositoryProvider);
   if (authState is AuthAuthenticated) {
-    return ref
-        .read(bookingProvider.notifier)
-        .getCaretakerBookings(authState.user.id);
+    return repo.getCaretakerBookings(authState.user.id);
   }
   return Stream.value([]);
 });

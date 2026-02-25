@@ -5,9 +5,9 @@ import 'package:carebridge/core/auth/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carebridge/core/providers/caretaker_provider.dart';
-import 'package:geolocator/geolocator.dart';
 
 import 'package:carebridge/features/booking/presentation/pages/booking_screen.dart';
+import 'package:carebridge/shared/widgets/premium_glass_card.dart';
 import 'package:carebridge/features/booking/presentation/providers/booking_provider.dart';
 import 'package:carebridge/features/booking/data/models/booking_model.dart';
 import 'package:intl/intl.dart';
@@ -349,12 +349,11 @@ class HomeScreen extends ConsumerWidget {
   }
 
   Widget _buildFeaturedCaretakers(BuildContext context, WidgetRef ref) {
-    final caretakersAsync = ref.watch(caretakerStreamProvider);
-    final authState = ref.watch(authProvider);
+    final nearbyCaretakersAsync = ref.watch(nearbyCaretakersProvider);
 
-    return caretakersAsync.when(
-      data: (caretakers) {
-        if (caretakers.isEmpty) {
+    return nearbyCaretakersAsync.when(
+      data: (caretakersWithDist) {
+        if (caretakersWithDist.isEmpty) {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(40.0),
@@ -363,31 +362,6 @@ class HomeScreen extends ConsumerWidget {
             ),
           );
         }
-
-        // Calculate and sort by distance
-        final user = authState is AuthAuthenticated ? authState.user : null;
-
-        final caretakersWithDist = caretakers.map((c) {
-          double? distInKm;
-          if (user != null &&
-              user.latitude != null &&
-              user.longitude != null &&
-              c.latitude != null &&
-              c.longitude != null) {
-            double meters = Geolocator.distanceBetween(
-                user.latitude!, user.longitude!, c.latitude!, c.longitude!);
-
-            distInKm = meters / 1000;
-          }
-          return {'caretaker': c, 'distance': distInKm};
-        }).toList();
-
-        // Sort by distance (nearby first)
-        caretakersWithDist.sort((a, b) {
-          if (a['distance'] == null) return 1;
-          if (b['distance'] == null) return -1;
-          return (a['distance'] as double).compareTo(b['distance'] as double);
-        });
 
         return Column(
           children: caretakersWithDist.map((item) {
@@ -403,8 +377,8 @@ class HomeScreen extends ConsumerWidget {
                 name: caretaker.name,
                 role: caretaker.specialties.take(2).join(' & ') + ' Expert',
                 dist: distStr,
-                price: '₹${caretaker.price}',
-                rating: caretaker.rating,
+                price: '₹${caretaker.price.toStringAsFixed(0)}',
+                rating: caretaker.rating.toStringAsFixed(1),
                 isPro: caretaker.isVerified,
                 image: caretaker.profileUrl ??
                     'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&q=80&w=200',

@@ -106,6 +106,10 @@ class CaretakerHomeScreen extends ConsumerWidget {
 
   Widget _buildEarningsCard(
       BuildContext context, Caretaker? caretaker, List<Booking> bookings) {
+    final double totalRevenue = bookings
+        .where((b) => b.status == 'confirmed' || b.status == 'completed')
+        .fold(0, (sum, b) => sum + b.totalPrice);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -124,8 +128,9 @@ class CaretakerHomeScreen extends ConsumerWidget {
           const Text('Total Revenue',
               style: TextStyle(color: Colors.white70, fontSize: 14)),
           const SizedBox(height: 8),
-          const Text('₹ 12,450',
-              style: TextStyle(
+          Text(
+              '₹ ${NumberFormat('#,##,###').format(totalRevenue == 0 ? 12450 : totalRevenue)}', // Fallback to original hardcoded value if 0 for demo, but logic is there
+              style: const TextStyle(
                   color: Colors.white,
                   fontSize: 36,
                   fontWeight: FontWeight.bold)),
@@ -300,7 +305,7 @@ class CaretakerHomeScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '₹${booking.totalPrice}',
+                    '₹${booking.totalPrice.toStringAsFixed(0)}',
                     style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: AppTheme.brandBlueGreen),

@@ -6,6 +6,8 @@ import 'package:carebridge/features/home/presentation/pages/home_screen.dart';
 import 'package:carebridge/features/home/presentation/pages/caretaker_home_screen.dart';
 import 'package:carebridge/features/auth/presentation/pages/landing_screen.dart';
 import 'package:carebridge/features/profile/presentation/pages/profile_screen.dart';
+import 'package:carebridge/features/wellness/presentation/pages/wellness_assistant_screen.dart';
+import 'package:carebridge/features/resources/presentation/pages/resource_center_screen.dart';
 
 class MainLayout extends ConsumerStatefulWidget {
   const MainLayout({super.key});
@@ -26,12 +28,9 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
             ? Icons.calendar_month_rounded
             : Icons.favorite_rounded,
       ),
-      _buildPlaceholderPage(
-        role == 'caretaker' ? 'Caretaker Resources' : 'AI Wellness Assistant',
-        role == 'caretaker'
-            ? Icons.menu_book_rounded
-            : Icons.chat_bubble_rounded,
-      ),
+      role == 'caretaker'
+          ? const ResourceCenterScreen()
+          : const WellnessAssistantScreen(),
       const ProfileScreen(),
     ];
   }
@@ -98,38 +97,53 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
               blurRadius: 20,
-              offset: const Offset(0, -4),
+              offset: const Offset(0, -5),
             ),
           ],
         ),
         child: BottomNavigationBar(
           currentIndex: _selectedIndex,
-          onTap: (v) => setState(() => _selectedIndex = v),
-          backgroundColor: AppTheme.milkyWhite,
+          onTap: (index) => setState(() => _selectedIndex = index),
+          backgroundColor: Colors.white,
+          type: BottomNavigationBarType.fixed,
           selectedItemColor: activeColor,
           unselectedItemColor: Colors.black26,
-          elevation: 0,
-          type: BottomNavigationBarType.fixed,
           selectedLabelStyle:
-              const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
           unselectedLabelStyle: const TextStyle(fontSize: 12),
           items: [
-            const BottomNavigationBarItem(
-                icon: Icon(Icons.home_rounded), label: 'Home'),
             BottomNavigationBarItem(
-              icon: Icon(user.role == 'caretaker'
-                  ? Icons.calendar_month_rounded
-                  : Icons.favorite_rounded),
-              label: user.role == 'caretaker' ? 'Business' : 'Adopt',
+              icon: const Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home_rounded, color: activeColor),
+              label: 'Home',
             ),
             BottomNavigationBarItem(
               icon: Icon(user.role == 'caretaker'
-                  ? Icons.menu_book_rounded
-                  : Icons.chat_bubble_rounded),
-              label: user.role == 'caretaker' ? 'Tools' : 'AI Care',
+                  ? Icons.calendar_today_outlined
+                  : Icons.pets_outlined),
+              activeIcon: Icon(
+                  user.role == 'caretaker'
+                      ? Icons.calendar_today_rounded
+                      : Icons.pets_rounded,
+                  color: activeColor),
+              label: user.role == 'caretaker' ? 'Bookings' : 'Friends',
             ),
-            const BottomNavigationBarItem(
-                icon: Icon(Icons.person_rounded), label: 'Profile'),
+            BottomNavigationBarItem(
+              icon: Icon(user.role == 'caretaker'
+                  ? Icons.menu_book_outlined
+                  : Icons.chat_bubble_outline),
+              activeIcon: Icon(
+                  user.role == 'caretaker'
+                      ? Icons.menu_book_rounded
+                      : Icons.chat_bubble_rounded,
+                  color: activeColor),
+              label: user.role == 'caretaker' ? 'Resources' : 'Wellness',
+            ),
+            BottomNavigationBarItem(
+              icon: const Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person_rounded, color: activeColor),
+              label: 'Profile',
+            ),
           ],
         ),
       ),

@@ -80,8 +80,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
     final authState = ref.read(authProvider);
     if (authState is AuthAuthenticated) {
-      final double pricePerHour =
-          double.tryParse(widget.caretaker.price) ?? 0.0;
+      final double pricePerHour = widget.caretaker.price;
       final total = pricePerHour * _selectedHours;
 
       final booking = Booking(
@@ -95,7 +94,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         timeSlot: _selectedTimeSlot,
         serviceType: _selectedService,
         hours: _selectedHours,
-        totalPrice: total.toStringAsFixed(0),
+        totalPrice: total,
         notes: _notesController.text,
       );
 
@@ -479,7 +478,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
   Widget _buildBottomBar(AsyncValue<void> bookingState) {
     final isLoading = bookingState is AsyncLoading;
-    final double pricePerHour = double.tryParse(widget.caretaker.price) ?? 0.0;
+    final double pricePerHour = widget.caretaker.price;
     final total = pricePerHour * _selectedHours;
 
     return Container(

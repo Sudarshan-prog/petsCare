@@ -1,8 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:carebridge/core/repositories/auth_repository.dart';
+import 'package:carebridge/core/repositories/pet_repository.dart';
+import 'package:carebridge/core/repositories/caretaker_repository.dart';
+import 'package:carebridge/core/providers/pet_provider.dart';
+import 'package:carebridge/core/providers/caretaker_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 // 1. Data Model
 class AppUser {
@@ -82,36 +86,23 @@ class AuthError extends AuthState {
 
 // 3. Notifier Logic
 class AuthNotifier extends StateNotifier<AuthState> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final IAuthRepository _authRepository;
+  final IPetRepository _petRepository;
+  final ICaretakerRepository _caretakerRepository;
 
-  AuthNotifier() : super(AuthInitial()) {
-    _auth.authStateChanges().listen((User? user) async {
+  AuthNotifier(
+    this._authRepository,
+    this._petRepository,
+    this._caretakerRepository,
+  ) : super(AuthInitial()) {
+    _authRepository.authStateChanges.listen((user) async {
       if (user == null) {
         state = AuthUnauthenticated();
       } else {
         try {
-          // Fetch extra data from Firestore if available
-          final doc = await _firestore.collection('users').doc(user.uid).get();
-          final data = doc.data();
-          final String? role = data != null ? data['role'] as String? : null;
-          final String? phone =
-              data != null ? data['phoneNumber'] as String? : null;
-          final double? lat =
-              data != null ? (data['latitude'] as num?)?.toDouble() : null;
-          final double? lng =
-              data != null ? (data['longitude'] as num?)?.toDouble() : null;
-
-          state = AuthAuthenticated(AppUser.fromFirebase(
-            user,
-            role: role,
-            phoneNumber: phone,
-            latitude: lat,
-            longitude: lng,
-          ));
+          final appUser = await _authRepository.getUserData(user.uid);
+          state = AuthAuthenticated(appUser ?? AppUser.fromFirebase(user));
         } catch (e) {
-          // Fallback if firestore fails
           state = AuthAuthenticated(AppUser.fromFirebase(user));
         }
       }
@@ -121,54 +112,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> login(String email, String password) async {
     state = AuthLoading();
     try {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
-    } on FirebaseAuthException catch (e) {
-      state = AuthError(e.message ?? 'Login failed');
+      await _authRepository.login(email, password);
+    } on Exception catch (e) {
+      state = AuthError(e.toString());
     }
   }
 
   Future<void> signup(String name, String email, String password) async {
     state = AuthLoading();
     try {
-      UserCredential credential = await _auth.createUserWithEmailAndPassword(
-          email: email, password: password);
-      await credential.user?.updateDisplayName(name);
-
-      // Initial Firestore Entry
-      await _firestore.collection('users').doc(credential.user!.uid).set({
-        'id': credential.user!.uid,
-        'name': name,
-        'email': email,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
+      final credential = await _authRepository.signup(name, email, password);
       state = AuthAuthenticated(AppUser.fromFirebase(credential.user!));
-    } on FirebaseAuthException catch (e) {
-      state = AuthError(e.message ?? 'Signup failed');
+    } on Exception catch (e) {
+      state = AuthError(e.toString());
     }
   }
 
   Future<void> saveUserRole(String role) async {
-    final user = _auth.currentUser;
-    debugPrint("AUTH_PROVIDER: Saving role locally -> $role");
-    if (user != null) {
+    if (state is AuthAuthenticated) {
+      final user = (state as AuthAuthenticated).user;
       try {
-        await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .update({'role': role});
-
-        final doc = await _firestore.collection('users').doc(user.uid).get();
-        final data = doc.data();
-
-        // Refresh state
-        state = AuthAuthenticated(AppUser.fromFirebase(
-          user,
-          role: role,
-          phoneNumber: data?['phoneNumber'],
-          latitude: (data?['latitude'] as num?)?.toDouble(),
-          longitude: (data?['longitude'] as num?)?.toDouble(),
-        ));
+        await _authRepository.updateUserData(user.id, {'role': role});
+        final updatedUser = await _authRepository.getUserData(user.id);
+        if (updatedUser != null) state = AuthAuthenticated(updatedUser);
       } catch (e) {
         debugPrint("Error saving role: $e");
       }
@@ -181,17 +147,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String breed,
     required String age,
   }) async {
-    final user = _auth.currentUser;
-    if (user != null) {
+    if (state is AuthAuthenticated) {
+      final user = (state as AuthAuthenticated).user;
       try {
-        await _firestore.collection('pets').add({
-          'ownerId': user.uid,
-          'name': name,
-          'type': type,
-          'breed': breed,
-          'age': age,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
+        await _petRepository.addPet(Pet(
+          id: '', // Firestore generates ID
+          ownerId: user.id,
+          name: name,
+          type: type,
+          breed: breed,
+          age: age,
+        ));
       } catch (e) {
         debugPrint("Error saving pet: $e");
       }
@@ -206,43 +172,34 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required double latitude,
     required double longitude,
   }) async {
-    final user = _auth.currentUser;
-    if (user != null) {
+    if (state is AuthAuthenticated) {
+      final user = (state as AuthAuthenticated).user;
       try {
-        // Update User Doc with phone and location
-        await _firestore.collection('users').doc(user.uid).update({
+        // Update User Doc via AuthRepository
+        await _authRepository.updateUserData(user.id, {
           'phoneNumber': phoneNumber,
           'latitude': latitude,
           'longitude': longitude,
         });
 
-        // Add/Update Caretaker Doc
-        await _firestore.collection('caretakers').doc(user.uid).set({
-          'id': user.uid,
-          'name': user.displayName,
+        // Save Caretaker Profile via CaretakerRepository
+        await _caretakerRepository.saveCaretakerProfile(user.id, {
+          'id': user.id,
+          'name': user.name,
           'email': user.email,
           'bio': bio,
           'specialties': specialties,
-          'price': price,
+          'price': double.tryParse(price) ?? 0.0,
           'phoneNumber': phoneNumber,
           'latitude': latitude,
           'longitude': longitude,
-          'rating': '5.0',
+          'rating': 5.0,
           'isVerified': false,
-          'profileUrl': user.photoURL,
-          'createdAt': FieldValue.serverTimestamp(),
+          'profileUrl': user.profileUrl,
         });
 
-        // Refresh Auth State
-        final doc = await _firestore.collection('users').doc(user.uid).get();
-        final data = doc.data();
-        state = AuthAuthenticated(AppUser.fromFirebase(
-          user,
-          role: data?['role'],
-          phoneNumber: phoneNumber,
-          latitude: latitude,
-          longitude: longitude,
-        ));
+        final updatedUser = await _authRepository.getUserData(user.id);
+        if (updatedUser != null) state = AuthAuthenticated(updatedUser);
       } catch (e) {
         debugPrint("Error saving caretaker: $e");
       }
@@ -250,24 +207,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> updateLocation(double lat, double lng) async {
-    final user = _auth.currentUser;
-    if (user != null) {
+    if (state is AuthAuthenticated) {
+      final user = (state as AuthAuthenticated).user;
       try {
-        await _firestore.collection('users').doc(user.uid).update({
+        await _authRepository.updateUserData(user.id, {
           'latitude': lat,
           'longitude': lng,
         });
-
-        final doc = await _firestore.collection('users').doc(user.uid).get();
-        final data = doc.data();
-
-        state = AuthAuthenticated(AppUser.fromFirebase(
-          user,
-          role: data?['role'],
-          phoneNumber: data?['phoneNumber'],
-          latitude: lat,
-          longitude: lng,
-        ));
+        final updatedUser = await _authRepository.getUserData(user.id);
+        if (updatedUser != null) state = AuthAuthenticated(updatedUser);
       } catch (e) {
         debugPrint("Error updating location: $e");
       }
@@ -278,35 +226,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = AuthLoading();
     try {
       if (provider == 'Google') {
-        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-        if (googleUser == null) {
-          state = AuthUnauthenticated();
-          return;
-        }
-        final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
-        final OAuthCredential credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
-        final userCredential = await _auth.signInWithCredential(credential);
-
-        final userDoc = await _firestore
-            .collection('users')
-            .doc(userCredential.user!.uid)
-            .get();
-        if (!userDoc.exists) {
-          await _firestore
-              .collection('users')
-              .doc(userCredential.user!.uid)
-              .set({
-            'id': userCredential.user!.uid,
-            'name': userCredential.user!.displayName,
-            'email': userCredential.user!.email,
-            'profileUrl': userCredential.user!.photoURL,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-        }
+        await _authRepository.loginWithGoogle();
       } else {
         state = const AuthError('Provider not supported yet');
       }
@@ -316,17 +236,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
-    await _googleSignIn.signOut();
-    await _auth.signOut();
+    await _authRepository.logout();
     state = AuthUnauthenticated();
   }
 }
 
 // 4. Providers
+final authRepositoryProvider = Provider<IAuthRepository>((ref) {
+  return AuthRepository();
+});
+
+final petRepositoryProvider = Provider<IPetRepository>((ref) {
+  return PetRepository();
+});
+
+final caretakerRepositoryProvider = Provider<ICaretakerRepository>((ref) {
+  return CaretakerRepository();
+});
+
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier();
+  final authRepo = ref.watch(authRepositoryProvider);
+  final petRepo = ref.watch(petRepositoryProvider);
+  final caretakerRepo = ref.watch(caretakerRepositoryProvider);
+  return AuthNotifier(authRepo, petRepo, caretakerRepo);
 });
 
 final authStateChangesProvider = StreamProvider<User?>((ref) {
-  return FirebaseAuth.instance.authStateChanges();
+  return ref.watch(authRepositoryProvider).authStateChanges;
 });

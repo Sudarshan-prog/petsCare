@@ -12,7 +12,7 @@ class Booking {
   final String timeSlot;
   final String serviceType;
   final int hours;
-  final String totalPrice;
+  final double totalPrice;
   final String status; // 'pending', 'confirmed', 'completed', 'cancelled'
   final String? notes;
 
@@ -66,7 +66,7 @@ class Booking {
       timeSlot: data['timeSlot'] ?? '',
       serviceType: data['serviceType'] ?? '',
       hours: data['hours'] ?? 1,
-      totalPrice: data['totalPrice'] ?? '',
+      totalPrice: (data['totalPrice'] as num?)?.toDouble() ?? 0.0,
       status: data['status'] ?? 'pending',
       notes: data['notes'],
     );

@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the document belongs to the authenticated user
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // 1. Users Collection: Users can read any user (for discovery), but only update their own
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
+    // 2. Caretakers Collection: Publicly readable for all auth users, only self-update
+    match /caretakers/{caretakerId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(caretakerId);
+    }
+
+    // 3. Bookings Collection: Critical for security
+    match /bookings/{bookingId} {
+      // Owners and Caretakers involved in the booking can read it
+      allow read: if isAuthenticated() && 
+        (isOwner(resource.data.ownerId) || isOwner(resource.data.caretakerId));
+      
+      // Only pet owners can create a booking request
+      allow create: if isAuthenticated() && isOwner(request.resource.data.ownerId);
+      
+      // Both parties can update status (Owner: Cancel, Caretaker: Confirm/Reject)
+      allow update: if isAuthenticated() && 
+        (isOwner(resource.data.ownerId) || isOwner(resource.data.caretakerId));
+    }
+
+    // 4. Pets Collection: Owners can manage their pets
+    match /pets/{petId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isOwner(request.resource.data.ownerId);
+    }
+  }
+}

@@ -1,17 +1,19 @@
-# carebridge
+# CareBridge - Pet Care Ecosystem
 
-A new Flutter project.
+## 🏗️ Technical Architecture (v2.0)
+As of Feb 2026, the app has been refactored for professional scalability:
+- **Repository Pattern**: All Firebase logic is abstracted behind `IRepository` interfaces (Auth, Booking, Caretaker, Pet).
+- **Type-Safety**: Financial data (prices, ratings) are enforced as `double` types to prevent runtime parsing crashes.
+- **Provider-Based Logic**: Proximity calculations and data streams are managed via optimized Riverpod providers.
+- **Security Logic**: Role-based access control and Firestore Security Rules are now blueprint-ready.
+
+## Features
+- **Smart Proximity**: Find verified caretakers near your current location.
+- **Real-time Status**: Live acceptance/rejection of bookings.
+- **Wellness Assistant**: (Phase 4) AI-driven pet health logs.
+- **Care Manager**: Comprehensive pet profile management.
 
 ## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+1. Run `flutter pub get`
+2. Ensure Firebase is connected
+3. Run `flutter run`
