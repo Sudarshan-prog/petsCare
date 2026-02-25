@@ -1,0 +1,71 @@
+# Pets & People CareBridge: Architecture Overview
+
+The CareBridge ecosystem is a dual-service platform connecting pet owners with verified caretakers and adoption hubs. The current architecture is in a transitionary phase, moving from a Firebase-centric model to a hardened self-hosted backend.
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    subgraph "Frontend (Flutter)"
+        App["CareBridge Mobile App"]
+        RP["Riverpod (State Management)"]
+        UI["UI Components (Glassmorphism)"]
+    end
+
+    subgraph "Service Layer"
+        FB_Auth["Firebase Auth"]
+        FB_FS["Cloud Firestore (Real-time Data)"]
+        Gemini["Gemini AI (Pet Care Assistant)"]
+        Jitsi["Jitsi Meet (Video SOS)"]
+        Gmaps["Google Maps API (Proximity)"]
+    end
+
+    subgraph "Hardened Backend (Python)"
+        Flask["Flask API"]
+        SQLA["SQLAlchemy ORM"]
+        Postgres["PostgreSQL Database"]
+    end
+
+    App --> RP
+    RP --> UI
+    App --> FB_Auth
+    App --> FB_FS
+    App --> Gemini
+    App --> Jitsi
+    App --> Gmaps
+    App --> Flask
+```
+
+## 📱 Frontend (Flutter)
+- **State Management**: [Riverpod](https://pub.dev/packages/flutter_riverpod) for reactive state handling.
+- **Architecture**: Feature-driven structure (`lib/features/`) following Clean Architecture principles.
+- **Key Features**:
+    - **Discovery**: Proximity-based caretaker matching (Haversine calculation).
+    - **Trust System**: Tiered verification badges and trust modals.
+    - **Booking**: Multi-step booking flow with Firestore synchronization.
+    - **AI Chat**: Integration with Gemini AI for pet wellness queries.
+
+## 🖥️ Backend & Persistence
+Currently, the app uses a **hybrid persistence model**:
+
+### 1. Firebase (Active Production/MVP)
+- **Authentication**: Firebase Auth for email/password and OAuth (Google/Apple).
+- **Database**: Cloud Firestore for real-time synchronization of caretakers, pets, and bookings.
+- **Storage**: Firebase Storage (indicated for profile photos).
+
+### 2. Python/Flask (Hardening Mode)
+- **Purpose**: Moving towards a more secure, self-hosted infrastructure.
+- **Database**: PostgreSQL (migrating from SQLite [app.db](file:///d:/petsCare/app.db)).
+- **Logic**: Handles sensitive operations and custom business logic that requires hardening.
+
+## 🛠️ Integrated Services
+| Service | Purpose |
+| :--- | :--- |
+| **Google Maps** | Visualization of nearby caretakers and distance calculations. |
+| **Jitsi Meet** | Real-time video consultation for the Emergency SOS system. |
+| **Gemini AI** | RAG-based AI assistant using a local `knowledge-base.json` and API fallback. |
+
+## 🔒 Security & Standards
+- **Trust Verification**: Tiered system (Verified -> Trusted -> Pro) based on ID scans and NGO endorsements.
+- **Localization**: Currency set to **INR (₹)**.
+- **Performance**: haversine calculations optimized for client-side or sub-200ms DB queries.
