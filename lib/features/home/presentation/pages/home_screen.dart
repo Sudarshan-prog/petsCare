@@ -392,6 +392,73 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
           ],
+          if (booking.status == 'pending') ...[
+            const SizedBox(height: 12),
+            Builder(
+              builder: (context) {
+                final now = DateTime.now();
+                final creationTime = booking.createdAt ?? now;
+                final diff = now.difference(creationTime);
+                final bool canCancel = diff.inHours >= 2;
+
+                if (!canCancel) {
+                  return Text(
+                    'Caretaker has ${2 - diff.inHours}h remaining to respond.',
+                    style: const TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: Colors.black26,
+                        fontSize: 10),
+                  );
+                }
+
+                return Align(
+                  alignment: Alignment.centerRight,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Cancel Request?'),
+                          content: const Text(
+                              'The caretaker hasn\'t responded in 2 hours. Would you like to cancel and release your funds instantly?'),
+                          actions: [
+                            TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Keep Waiting')),
+                            TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Yes, Cancel Now',
+                                    style:
+                                        TextStyle(color: AppTheme.alertRed))),
+                          ],
+                        ),
+                      );
+
+                      if (confirmed == true) {
+                        await ref
+                            .read(bookingProvider.notifier)
+                            .updateBookingStatus(booking.id!, 'cancelled');
+                        ref.invalidate(ownerBookingsStreamProvider);
+                      }
+                    },
+                    icon: const Icon(Icons.cancel_outlined, size: 14),
+                    label: const Text('Cancel Request',
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.alertRed,
+                      side: const BorderSide(color: AppTheme.alertRed),
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
           if (booking.status == 'confirmed') ...[
             const SizedBox(height: 12),
             Align(

@@ -16,4 +16,10 @@ abstract class IPaymentRepository {
   });
 
   void dispose();
+
+  Future<void> refundPayment(String paymentId);
+
+  Future<void> capturePayment(String paymentId, double amount);
+
+  Future<void> releasePayment(String paymentId);
 }

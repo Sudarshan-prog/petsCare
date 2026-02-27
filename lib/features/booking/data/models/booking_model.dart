@@ -20,6 +20,7 @@ class Booking {
   final String? statusImageUrl;
   final String paymentStatus; // 'unpaid', 'paid', 'failed'
   final String? paymentId; // Razorpay payment ID
+  final DateTime? createdAt; // ARCHITECT: Time of booking creation
 
   Booking({
     this.id,
@@ -41,6 +42,7 @@ class Booking {
     this.statusImageUrl,
     this.paymentStatus = 'unpaid',
     this.paymentId,
+    this.createdAt,
   });
 
   Map<String, dynamic> toMap() {
@@ -64,12 +66,20 @@ class Booking {
       'statusImageUrl': statusImageUrl,
       'paymentStatus': paymentStatus,
       'paymentId': paymentId,
-      'createdAt': FieldValue.serverTimestamp(),
+      'createdAt': createdAt ?? FieldValue.serverTimestamp(),
     };
   }
 
   factory Booking.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+    DateTime? parseCreatedAt(dynamic value) {
+      if (value == null) return null;
+      if (value is Timestamp) return value.toDate();
+      if (value is String) return DateTime.tryParse(value);
+      return null;
+    }
+// ... factory continues
 
     double parseDouble(dynamic value, double fallback) {
       if (value == null) return fallback;
@@ -105,6 +115,7 @@ class Booking {
       statusImageUrl: data['statusImageUrl'],
       paymentStatus: data['paymentStatus'] ?? 'unpaid',
       paymentId: data['paymentId'],
+      createdAt: parseCreatedAt(data['createdAt']),
     );
   }
 }

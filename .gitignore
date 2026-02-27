@@ -54,6 +54,7 @@ app.*.map.json
 scripts/service-account.json
 google-services.json
 GoogleService-Info.plist
+lib/core/config/app_config.dart
 
 # Flutter
 .flutter-plugins*

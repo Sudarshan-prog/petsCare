@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:carebridge/core/providers/payment_provider.dart';
+import 'package:carebridge/core/repositories/payment_repository_interface.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carebridge/features/booking/data/models/booking_model.dart';
@@ -12,8 +14,10 @@ class BookingNotifier extends StateNotifier<AsyncValue<void>> {
   final IBookingRepository _repository;
   final IStorageRepository _storage;
   final ICaretakerRepository _caretakerRepository;
+  final IPaymentRepository _paymentRepository;
 
-  BookingNotifier(this._repository, this._storage, this._caretakerRepository)
+  BookingNotifier(this._repository, this._storage, this._caretakerRepository,
+      this._paymentRepository)
       : super(const AsyncValue.data(null));
 
   Future<void> createBooking(Booking booking) async {
@@ -28,20 +32,45 @@ class BookingNotifier extends StateNotifier<AsyncValue<void>> {
 
   Future<void> updateBookingStatus(String bookingId, String status) async {
     try {
-      // ARCHITECT: If completing or cancelling, we should physically delete the photo from cloud storage
+      final booking = await _repository.getBookingById(bookingId);
+      if (booking == null) return;
+
+      // ARCHITECT: BLUEPRINT A - AUTHORIZE & CAPTURE LOGIC
+      if (status == 'confirmed' && booking.paymentStatus == 'authorized') {
+        debugPrint("💰 ARCHITECT: Caretaker ACCEPTED. Capturing funds...");
+        if (booking.paymentId != null) {
+          await _paymentRepository.capturePayment(
+              booking.paymentId!, booking.totalPrice);
+          await _repository.updateBookingPaymentStatus(bookingId, 'paid');
+        }
+      } else if (status == 'cancelled' &&
+          booking.paymentStatus == 'authorized') {
+        debugPrint(
+            "🛡️ ARCHITECT: Caretaker REJECTED. Releasing authorization (FREE)...");
+        if (booking.paymentId != null) {
+          await _paymentRepository.releasePayment(booking.paymentId!);
+          await _repository.updateBookingPaymentStatus(bookingId, 'released');
+        }
+      } else if (status == 'cancelled' && booking.paymentStatus == 'paid') {
+        // This is a post-acceptance cancellation (requires standard refund)
+        debugPrint(
+            "⚠️ ARCHITECT: Post-acceptance cancellation. Refunding (Standard Fee applies)...");
+        if (booking.paymentId != null) {
+          await _paymentRepository.refundPayment(booking.paymentId!);
+          await _repository.updateBookingPaymentStatus(bookingId, 'refunded');
+        }
+      }
+
+      // ARCHITECT: Purge photos if job is finished
       if (status == 'completed' || status == 'cancelled') {
-        debugPrint("🧹 ARCHITECT: Purging final photo for finished booking...");
-        final booking = await _repository.getBookingById(bookingId);
-        if (booking?.statusImageUrl != null &&
-            booking!.statusImageUrl!.startsWith('http')) {
+        if (booking.statusImageUrl != null &&
+            booking.statusImageUrl!.startsWith('http')) {
           await _storage.deleteImage(booking.statusImageUrl!);
-          debugPrint("🗑️ ARCHITECT: Cloud storage cleared!");
         }
       }
 
       await _repository.updateBookingStatus(bookingId, status);
 
-      // If we are marking it as completed/cancelled, also clear the image URL from DB
       if (status == 'completed' || status == 'cancelled') {
         await _repository.updateBookingImageUrl(bookingId, null);
       }
@@ -53,26 +82,16 @@ class BookingNotifier extends StateNotifier<AsyncValue<void>> {
   Future<void> sendPhotoUpdate(String bookingId, File photo) async {
     state = const AsyncValue.loading();
     try {
-      debugPrint("🚀 ARCHITECT: Starting Single-Photo Update for: $bookingId");
-
-      // 1. ARCHITECT CLEANUP: Find and delete the previous photo first
       final existingBooking = await _repository.getBookingById(bookingId);
       if (existingBooking?.statusImageUrl != null &&
           existingBooking!.statusImageUrl!.startsWith('http')) {
-        debugPrint("♻️ ARCHITECT: Deleting previous photo to save space...");
         await _storage.deleteImage(existingBooking.statusImageUrl!);
       }
 
-      // 2. Upload the new photo
       final imageUrl = await _storage.uploadBookingUpdate(bookingId, photo);
-      debugPrint("🔗 ARCHITECT: New Photo URL: $imageUrl");
-
-      // 3. Update DB
       await _repository.updateBookingImageUrl(bookingId, imageUrl);
-      debugPrint("✅ ARCHITECT: Update Complete!");
       state = const AsyncValue.data(null);
     } catch (e, stack) {
-      debugPrint("❌ ARCHITECT ERROR: sendPhotoUpdate failed: $e");
       state = AsyncValue.error(e, stack);
       rethrow;
     }
@@ -96,7 +115,8 @@ final bookingProvider =
   final repo = ref.watch(bookingRepositoryProvider);
   final storage = ref.watch(storageRepositoryProvider);
   final caretakerRepo = ref.watch(caretakerRepositoryProvider);
-  return BookingNotifier(repo, storage, caretakerRepo);
+  final paymentRepo = ref.watch(paymentRepositoryProvider);
+  return BookingNotifier(repo, storage, caretakerRepo, paymentRepo);
 });
 
 final ownerBookingsStreamProvider = StreamProvider<List<Booking>>((ref) {

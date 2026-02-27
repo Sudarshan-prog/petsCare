@@ -10,6 +10,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:carebridge/core/providers/payment_provider.dart';
+import 'package:carebridge/core/config/app_config.dart';
 
 class BookingScreen extends ConsumerStatefulWidget {
   final Caretaker caretaker;
@@ -86,8 +87,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       for (var service in _selectedServices) {
         totalPremiums += widget.caretaker.serviceFees[service] ?? 0.0;
       }
-      const double platformFee =
-          15.0; // ARCHITECT: Acquisition Price (Aggressive Growth)
+      const double platformFee = AppConfig.platformFee;
       final total = basePrice + totalPremiums + platformFee;
 
       // 2. Start Commercial Payment Flow
@@ -110,7 +110,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
       for (var service in _selectedServices) {
         totalPremiums += widget.caretaker.serviceFees[service] ?? 0.0;
       }
-      const double platformFee = 15.0;
+      const double platformFee = AppConfig.platformFee;
       final total = basePrice + totalPremiums + platformFee;
 
       final booking = Booking(
@@ -128,7 +128,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         platformFee: platformFee,
         caretakerPayout: total - platformFee,
         notes: _notesController.text,
-        paymentStatus: 'paid',
+        paymentStatus: 'authorized',
         paymentId: paymentId,
       );
 
@@ -572,7 +572,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     for (var s in _selectedServices) {
       totalPremiums += widget.caretaker.serviceFees[s] ?? 0.0;
     }
-    const double platformFee = 15.0;
+    const double platformFee = AppConfig.platformFee;
     final total = basePrice + totalPremiums + platformFee;
 
     return Container(
