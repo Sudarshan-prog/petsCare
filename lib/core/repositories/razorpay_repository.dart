@@ -30,6 +30,7 @@ class RazorpayRepository implements IPaymentRepository {
     required String contact,
     required String email,
     required String description,
+    String? caretakerId,
   }) {
     // ARCHITECT: DEVELOPER BYPASS LOGIC
     // If the key is the placeholder, we simulate a successful payment for the demo.
@@ -58,6 +59,17 @@ class RazorpayRepository implements IPaymentRepository {
       'amount': (amount * 100).toInt(), // Razorpay expects amount in paise
       'name': 'PetCare Bridge',
       'description': description,
+      // ARCHITECT: Razorpay Route configuration
+      if (caretakerId != null)
+        'transfers': [
+          {
+            'account': caretakerId, // Linked Account ID
+            'amount': ((amount - 15) * 100).toInt(), // Amount in paise
+            'currency': 'INR',
+            'notes': {'booking_for': contact},
+            'on_hold': false
+          }
+        ],
       'retry': {'enabled': true, 'max_count': 1},
       'send_sms_hash': true,
       'prefill': {'contact': contact, 'email': email},

@@ -4,6 +4,8 @@ import 'package:carebridge/core/providers/pet_provider.dart';
 abstract class IPetRepository {
   Stream<List<Pet>> getUserPets(String ownerId);
   Future<void> addPet(Pet pet);
+  Future<void> updatePet(String petId, Map<String, dynamic> data);
+  Future<void> deletePet(String petId);
 }
 
 class PetRepository implements IPetRepository {
@@ -29,5 +31,15 @@ class PetRepository implements IPetRepository {
       'age': pet.age,
       'createdAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  @override
+  Future<void> updatePet(String petId, Map<String, dynamic> data) {
+    return _firestore.collection('pets').doc(petId).update(data);
+  }
+
+  @override
+  Future<void> deletePet(String petId) {
+    return _firestore.collection('pets').doc(petId).delete();
   }
 }

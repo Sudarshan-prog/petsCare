@@ -130,8 +130,7 @@ class CaretakerHomeScreen extends ConsumerWidget {
           const Text('Total Revenue',
               style: TextStyle(color: Colors.white70, fontSize: 14)),
           const SizedBox(height: 8),
-          Text(
-              '₹ ${NumberFormat('#,##,###').format(totalRevenue == 0 ? 12450 : totalRevenue)}', // Fallback to original hardcoded value if 0 for demo, but logic is there
+          Text('₹ ${NumberFormat('#,##,###').format(totalRevenue)}',
               style: const TextStyle(
                   color: Colors.white,
                   fontSize: 36,
@@ -209,7 +208,11 @@ class CaretakerHomeScreen extends ConsumerWidget {
       AsyncValue<List<Booking>> bookingsAsync) {
     return bookingsAsync.when(
       data: (bookings) {
-        if (bookings.isEmpty) {
+        // ARCHITECT: Only show active jobs (Pending, Confirmed, Cancelled)
+        final activeJobs =
+            bookings.where((b) => b.status != 'completed').toList();
+
+        if (activeJobs.isEmpty) {
           return Container(
             width: double.infinity,
             padding: const EdgeInsets.all(32),
@@ -237,7 +240,7 @@ class CaretakerHomeScreen extends ConsumerWidget {
           );
         }
         return Column(
-          children: bookings
+          children: activeJobs
               .map((booking) => _buildBookingItem(context, ref, booking))
               .toList(),
         );

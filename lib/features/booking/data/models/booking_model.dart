@@ -13,6 +13,8 @@ class Booking {
   final List<String> services;
   final int hours;
   final double totalPrice;
+  final double platformFee; // ARCHITECT: Platform's commission
+  final double caretakerPayout; // ARCHITECT: Net amount for caretaker
   final String status; // 'pending', 'confirmed', 'completed', 'cancelled'
   final String? notes;
   final String? statusImageUrl;
@@ -32,6 +34,8 @@ class Booking {
     required this.services,
     required this.hours,
     required this.totalPrice,
+    this.platformFee = 15.0, // Default platform fee
+    this.caretakerPayout = 0.0,
     this.status = 'pending',
     this.notes,
     this.statusImageUrl,
@@ -52,6 +56,9 @@ class Booking {
       'services': services,
       'hours': hours,
       'totalPrice': totalPrice,
+      'platformFee': platformFee,
+      'caretakerPayout':
+          caretakerPayout == 0.0 ? (totalPrice - platformFee) : caretakerPayout,
       'status': status,
       'notes': notes,
       'statusImageUrl': statusImageUrl,
@@ -91,6 +98,8 @@ class Booking {
       services: List<String>.from(data['services'] ?? []),
       hours: parseInt(data['hours'], 1),
       totalPrice: parseDouble(data['totalPrice'], 0.0),
+      platformFee: parseDouble(data['platformFee'], 15.0),
+      caretakerPayout: parseDouble(data['caretakerPayout'], 0.0),
       status: data['status'] ?? 'pending',
       notes: data['notes'],
       statusImageUrl: data['statusImageUrl'],

@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:carebridge/core/services/notification_service.dart';
 
 // 1. Data Model
 class AppUser {
@@ -110,6 +111,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         try {
           final appUser = await _authRepository.getUserData(user.uid);
           state = AuthAuthenticated(appUser ?? AppUser.fromFirebase(user));
+          // Bulletproof: Update FCM token for every new session
+          NotificationService.updateTokenInFirestore();
         } catch (e) {
           state = AuthAuthenticated(AppUser.fromFirebase(user));
         }
@@ -180,6 +183,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required double latitude,
     required double longitude,
     Map<String, double>? serviceFees,
+    bool isVerified = false,
   }) async {
     if (state is AuthAuthenticated) {
       final user = (state as AuthAuthenticated).user;
@@ -203,7 +207,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           'latitude': latitude,
           'longitude': longitude,
           'rating': 5.0,
-          'isVerified': false,
+          'isVerified': isVerified,
           'profileUrl': user.profileUrl,
           'serviceFees': serviceFees,
         });
@@ -245,9 +249,75 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> sendOTP(
+    String phoneNumber, {
+    required Function(String verificationId, int? resendToken) onCodeSent,
+    required Function(String message) onError,
+  }) async {
+    try {
+      await _authRepository.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        onCodeSent: onCodeSent,
+        onVerificationFailed: (e) =>
+            onError(e.message ?? 'Verification failed'),
+      );
+    } catch (e) {
+      onError(e.toString());
+    }
+  }
+
+  Future<void> verifyOTP(String verificationId, String smsCode) async {
+    try {
+      await _authRepository.verifyOTPAndLink(
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> logout() async {
     await _authRepository.logout();
     state = AuthUnauthenticated();
+  }
+
+  Future<void> updateProfile({
+    required String name,
+    required String phoneNumber,
+    String? bio,
+    double? price,
+    List<String>? specialties,
+    Map<String, double>? serviceFees,
+  }) async {
+    if (state is AuthAuthenticated) {
+      final user = (state as AuthAuthenticated).user;
+      try {
+        // 1. Update Core User Data
+        await _authRepository.updateUserData(user.id, {
+          'name': name,
+          'phoneNumber': phoneNumber,
+        });
+
+        // 2. If Caretaker, update the specialized profile
+        if (user.role == 'caretaker') {
+          await _caretakerRepository.saveCaretakerProfile(user.id, {
+            'name': name,
+            'phoneNumber': phoneNumber,
+            if (bio != null) 'bio': bio,
+            if (price != null) 'price': price,
+            if (specialties != null) 'specialties': specialties,
+            if (serviceFees != null) 'serviceFees': serviceFees,
+          });
+        }
+
+        // 3. Refresh Local State
+        final updatedUser = await _authRepository.getUserData(user.id);
+        if (updatedUser != null) state = AuthAuthenticated(updatedUser);
+      } catch (e) {
+        debugPrint("❌ ARCHITECT: Profile Update Failed: $e");
+      }
+    }
   }
 }
 
@@ -258,10 +328,6 @@ final authRepositoryProvider = Provider<IAuthRepository>((ref) {
 
 final petRepositoryProvider = Provider<IPetRepository>((ref) {
   return PetRepository();
-});
-
-final caretakerRepositoryProvider = Provider<ICaretakerRepository>((ref) {
-  return CaretakerRepository();
 });
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {

@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carebridge/core/app_theme.dart';
 import 'package:carebridge/core/auth/auth_provider.dart';
 import 'package:carebridge/features/auth/presentation/pages/landing_screen.dart';
+import 'package:carebridge/features/booking/presentation/pages/booking_history_screen.dart';
+import 'package:carebridge/features/profile/presentation/pages/edit_profile_screen.dart';
+import 'package:carebridge/features/profile/presentation/pages/my_pets_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -70,21 +73,42 @@ class ProfileScreen extends ConsumerWidget {
                     _buildProfileItem(
                       icon: Icons.person_outline_rounded,
                       title: 'Edit Profile',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EditProfileScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _buildProfileItem(
                       icon: Icons.pets_outlined,
                       title: 'My Pets',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MyPetsScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _buildProfileItem(
-                      icon: Icons.notifications_none_rounded,
-                      title: 'Notifications',
-                      onTap: () {},
+                      icon: Icons.history_rounded,
+                      title: 'Booking History',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const BookingHistoryScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _buildProfileItem(
                       icon: Icons.security_rounded,
-                      title: 'Privacy & Security',
+                      title: 'Privacy & Certificate',
                       onTap: () {},
                     ),
                     const SizedBox(height: 24),

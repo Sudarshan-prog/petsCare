@@ -9,6 +9,7 @@ import 'package:carebridge/features/booking/presentation/providers/booking_provi
 import 'package:carebridge/features/booking/data/models/booking_model.dart';
 import 'package:carebridge/core/providers/caretaker_provider.dart';
 import 'package:carebridge/features/booking/presentation/pages/booking_screen.dart';
+import 'package:carebridge/features/booking/presentation/widgets/rating_dialog.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -146,8 +147,11 @@ class HomeScreen extends ConsumerWidget {
 
     return bookingsAsync.when(
       data: (bookings) {
-        debugPrint("FETCHED_BOOKINGS_COUNT: ${bookings.length}");
-        if (bookings.isEmpty) {
+        // ARCHITECT: Filter out completed bookings. They belong in history.
+        final activeBookings =
+            bookings.where((b) => b.status != 'completed').toList();
+
+        if (activeBookings.isEmpty) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 20),
             child: Text('You have no active bookings yet.',
@@ -156,7 +160,7 @@ class HomeScreen extends ConsumerWidget {
         }
 
         // Sort bookings by date (most recent first)
-        final sortedBookings = List<Booking>.from(bookings)
+        final sortedBookings = List<Booking>.from(activeBookings)
           ..sort((a, b) => b.date.compareTo(a.date));
 
         return Column(
@@ -203,6 +207,9 @@ class HomeScreen extends ConsumerWidget {
     if (booking.status == 'confirmed') {
       statusColor = Colors.green;
       statusIcon = Icons.check_circle_rounded;
+    } else if (booking.status == 'completed') {
+      statusColor = Colors.blueGrey;
+      statusIcon = Icons.task_alt_rounded;
     } else if (booking.status == 'cancelled') {
       statusColor = AppTheme.alertRed;
       statusIcon = Icons.cancel_rounded;
@@ -413,6 +420,32 @@ class HomeScreen extends ConsumerWidget {
                     await ref
                         .read(bookingProvider.notifier)
                         .updateBookingStatus(booking.id!, 'completed');
+
+                    if (context.mounted) {
+                      final double? rating = await showDialog<double>(
+                        context: context,
+                        builder: (context) => CaretakerRatingDialog(
+                          caretakerName: booking.caretakerName,
+                        ),
+                      );
+
+                      if (rating != null) {
+                        await ref
+                            .read(bookingProvider.notifier)
+                            .rateCaretaker(booking.caretakerId, rating);
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  '✨ Rating submitted! Thank you for your feedback.'),
+                              backgroundColor: AppTheme.safetyTeal,
+                            ),
+                          );
+                        }
+                      }
+                    }
+
                     ref.invalidate(ownerBookingsStreamProvider);
                   }
                 },

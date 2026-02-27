@@ -5,12 +5,15 @@ import 'package:carebridge/features/booking/data/models/booking_model.dart';
 import 'package:carebridge/core/auth/auth_provider.dart';
 import 'package:carebridge/core/repositories/storage_repository.dart';
 import 'package:carebridge/features/booking/domain/repositories/booking_repository.dart';
+import 'package:carebridge/core/repositories/caretaker_repository.dart';
+import 'package:carebridge/core/providers/caretaker_provider.dart';
 
 class BookingNotifier extends StateNotifier<AsyncValue<void>> {
   final IBookingRepository _repository;
   final IStorageRepository _storage;
+  final ICaretakerRepository _caretakerRepository;
 
-  BookingNotifier(this._repository, this._storage)
+  BookingNotifier(this._repository, this._storage, this._caretakerRepository)
       : super(const AsyncValue.data(null));
 
   Future<void> createBooking(Booking booking) async {
@@ -74,6 +77,14 @@ class BookingNotifier extends StateNotifier<AsyncValue<void>> {
       rethrow;
     }
   }
+
+  Future<void> rateCaretaker(String caretakerId, double rating) async {
+    try {
+      await _caretakerRepository.updateCaretakerRating(caretakerId, rating);
+    } catch (e) {
+      debugPrint("Error rating caretaker: $e");
+    }
+  }
 }
 
 final bookingRepositoryProvider = Provider<IBookingRepository>((ref) {
@@ -84,7 +95,8 @@ final bookingProvider =
     StateNotifierProvider<BookingNotifier, AsyncValue<void>>((ref) {
   final repo = ref.watch(bookingRepositoryProvider);
   final storage = ref.watch(storageRepositoryProvider);
-  return BookingNotifier(repo, storage);
+  final caretakerRepo = ref.watch(caretakerRepositoryProvider);
+  return BookingNotifier(repo, storage, caretakerRepo);
 });
 
 final ownerBookingsStreamProvider = StreamProvider<List<Booking>>((ref) {

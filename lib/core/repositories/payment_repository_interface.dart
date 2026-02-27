@@ -12,6 +12,7 @@ abstract class IPaymentRepository {
     required String contact,
     required String email,
     required String description,
+    String? caretakerId, // ARCHITECT: Used for Razorpay Route (Split Payout)
   });
 
   void dispose();

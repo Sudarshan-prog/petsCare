@@ -9,6 +9,8 @@ import 'package:carebridge/features/onboarding/presentation/pages/role_selection
 import 'package:carebridge/shared/widgets/main_layout.dart';
 import 'package:carebridge/core/providers/app_state_provider.dart';
 import 'firebase_options.dart';
+import 'package:carebridge/core/services/notification_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +18,11 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize Notifications
+  FirebaseMessaging.onBackgroundMessage(
+      NotificationService.firebaseMessagingBackgroundHandler);
+  await NotificationService.initialize();
 
   runApp(
     const ProviderScope(

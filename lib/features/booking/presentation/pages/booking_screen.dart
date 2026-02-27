@@ -96,6 +96,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             contact: authState.user.phoneNumber ?? '',
             email: authState.user.email,
             description: 'CareBridge Secure (Incl. Safety Fee: ₹15)',
+            caretakerId: widget.caretaker.id,
           );
     }
   }
@@ -124,6 +125,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         services: _selectedServices.toList(),
         hours: _selectedHours,
         totalPrice: total,
+        platformFee: platformFee,
+        caretakerPayout: total - platformFee,
         notes: _notesController.text,
         paymentStatus: 'paid',
         paymentId: paymentId,

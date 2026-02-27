@@ -53,6 +53,7 @@ class PaymentNotifier extends StateNotifier<PaymentState> {
     required String contact,
     required String email,
     required String description,
+    String? caretakerId,
   }) {
     state = state.copyWith(isLoading: true, error: null, isSuccess: false);
     _repository.openCheckout(
@@ -60,6 +61,7 @@ class PaymentNotifier extends StateNotifier<PaymentState> {
       contact: contact,
       email: email,
       description: description,
+      caretakerId: caretakerId,
     );
   }
 

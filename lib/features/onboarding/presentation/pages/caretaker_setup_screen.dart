@@ -24,6 +24,12 @@ class _CaretakerSetupScreenState extends ConsumerState<CaretakerSetupScreen> {
   double? _lng;
   bool _isLoading = false;
 
+  // ARCHITECT: Phone Verification State
+  String? _verificationId;
+  final _otpController = TextEditingController();
+  bool _otpSent = false;
+  bool _isPhoneVerified = false;
+
   final List<Map<String, dynamic>> _specialties = [
     {'name': 'Dogs', 'icon': FontAwesomeIcons.dog},
     {'name': 'Cats', 'icon': FontAwesomeIcons.cat},
@@ -147,19 +153,93 @@ class _CaretakerSetupScreenState extends ConsumerState<CaretakerSetupScreen> {
               const Text('Phone Number (Direct Contact)',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              TextField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.phone, size: 20),
-                  hintText: '+91 98765 43210',
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none),
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      enabled: !_isPhoneVerified,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.phone, size: 20),
+                        hintText: '+91 98765 43210',
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (!_isPhoneVerified)
+                    SizedBox(
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _isLoading || _phoneController.text.isEmpty
+                            ? null
+                            : _sendVerificationCode,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.safetyTeal.withOpacity(0.1),
+                          foregroundColor: AppTheme.safetyTeal,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: _otpSent
+                            ? const Text('Resend')
+                            : const Text('Verify'),
+                      ),
+                    )
+                  else
+                    const SizedBox(
+                      height: 56,
+                      child:
+                          Icon(Icons.check_circle, color: AppTheme.safetyTeal),
+                    ),
+                ],
               ),
+              if (_otpSent && !_isPhoneVerified) ...[
+                const SizedBox(height: 16),
+                const Text('Enter OTP',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _otpController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
+                        decoration: InputDecoration(
+                          hintText: '      1 2 3 4 5 6',
+                          counterText: '',
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _verifyOTP,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.safetyTeal,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: const Text('Confirm'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 24),
               const Text('Service Location',
                   style: TextStyle(fontWeight: FontWeight.bold)),
@@ -270,13 +350,54 @@ class _CaretakerSetupScreenState extends ConsumerState<CaretakerSetupScreen> {
     );
   }
 
+  Future<void> _sendVerificationCode() async {
+    setState(() => _isLoading = true);
+    await ref.read(authProvider.notifier).sendOTP(
+      _phoneController.text,
+      onCodeSent: (id, token) {
+        setState(() {
+          _verificationId = id;
+          _otpSent = true;
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('OTP Sent successfully!')));
+      },
+      onError: (msg) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
+      },
+    );
+  }
+
+  Future<void> _verifyOTP() async {
+    if (_verificationId == null) return;
+    setState(() => _isLoading = true);
+    try {
+      await ref
+          .read(authProvider.notifier)
+          .verifyOTP(_verificationId!, _otpController.text);
+      setState(() {
+        _isPhoneVerified = true;
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Phone number verified!')));
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Invalid OTP: $e')));
+    }
+  }
+
   Future<void> _handleSave() async {
     if (_bioController.text.isEmpty ||
         _priceController.text.isEmpty ||
-        _phoneController.text.isEmpty ||
+        !_isPhoneVerified ||
         _lat == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Please fill in all details and select location')));
+          content: Text('Please fill in all details and verify your phone')));
       return;
     }
 
@@ -295,6 +416,7 @@ class _CaretakerSetupScreenState extends ConsumerState<CaretakerSetupScreen> {
           latitude: _lat!,
           longitude: _lng!,
           serviceFees: serviceFees,
+          isVerified: _isPhoneVerified, // Pass actual verification status
         );
 
     setState(() => _isLoading = false);
