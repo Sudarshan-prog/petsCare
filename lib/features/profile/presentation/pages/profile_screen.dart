@@ -6,6 +6,7 @@ import 'package:carebridge/features/auth/presentation/pages/landing_screen.dart'
 import 'package:carebridge/features/booking/presentation/pages/booking_history_screen.dart';
 import 'package:carebridge/features/profile/presentation/pages/edit_profile_screen.dart';
 import 'package:carebridge/features/profile/presentation/pages/my_pets_screen.dart';
+import 'package:carebridge/features/profile/presentation/pages/earnings_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -82,18 +83,32 @@ class ProfileScreen extends ConsumerWidget {
                         );
                       },
                     ),
-                    _buildProfileItem(
-                      icon: Icons.pets_outlined,
-                      title: 'My Pets',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const MyPetsScreen(),
-                          ),
-                        );
-                      },
-                    ),
+                    if (user?.role == 'owner')
+                      _buildProfileItem(
+                        icon: Icons.pets_outlined,
+                        title: 'My Pets',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const MyPetsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    if (user?.role == 'caretaker')
+                      _buildProfileItem(
+                        icon: Icons.account_balance_wallet_outlined,
+                        title: 'Earnings & Wallet',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const EarningsScreen(),
+                            ),
+                          );
+                        },
+                      ),
                     _buildProfileItem(
                       icon: Icons.history_rounded,
                       title: 'Booking History',
