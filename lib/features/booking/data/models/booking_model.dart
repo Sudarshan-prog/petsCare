@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:carebridge/core/config/app_config.dart';
+import 'package:carebridge/models/enums.dart';
 
 class Booking {
   final String? id;
@@ -12,15 +14,18 @@ class Booking {
   final String timeSlot;
   final List<String> services;
   final int hours;
-  final double totalPrice;
-  final double platformFee; // ARCHITECT: Platform's commission
-  final double caretakerPayout; // ARCHITECT: Net amount for caretaker
-  final String status; // 'pending', 'confirmed', 'completed', 'cancelled'
+  final double basePrice; // Service cost before fees
+  final double ownerFee; // 2.5% charged to owner
+  final double caretakerCommission; // 2.5% deducted from caretaker
+  final double totalPrice; // What owner pays = basePrice + ownerFee
+  final double caretakerPayout; // What caretaker gets = basePrice - commission
+  final BookingStatus status;
   final String? notes;
   final String? statusImageUrl;
-  final String paymentStatus; // 'unpaid', 'paid', 'failed'
+  final PaymentStatus paymentStatus;
   final String? paymentId; // Razorpay payment ID
-  final DateTime? createdAt; // ARCHITECT: Time of booking creation
+  final DateTime? createdAt;
+  final bool isRated; // Prevents duplicate ratings
 
   Booking({
     this.id,
@@ -34,16 +39,24 @@ class Booking {
     required this.timeSlot,
     required this.services,
     required this.hours,
-    required this.totalPrice,
-    this.platformFee = 15.0, // Default platform fee
-    this.caretakerPayout = 0.0,
-    this.status = 'pending',
+    required this.basePrice,
+    double? ownerFee,
+    double? caretakerCommission,
+    double? totalPrice,
+    double? caretakerPayout,
+    this.status = BookingStatus.pending,
     this.notes,
     this.statusImageUrl,
-    this.paymentStatus = 'unpaid',
+    this.paymentStatus = PaymentStatus.unpaid,
     this.paymentId,
     this.createdAt,
-  });
+    this.isRated = false,
+  })  : ownerFee = ownerFee ?? AppConfig.calculateOwnerFee(basePrice),
+        caretakerCommission = caretakerCommission ??
+            AppConfig.calculateCaretakerCommission(basePrice),
+        totalPrice = totalPrice ?? AppConfig.calculateOwnerTotal(basePrice),
+        caretakerPayout =
+            caretakerPayout ?? AppConfig.calculateCaretakerPayout(basePrice);
 
   Map<String, dynamic> toMap() {
     return {
@@ -57,15 +70,17 @@ class Booking {
       'timeSlot': timeSlot,
       'services': services,
       'hours': hours,
+      'basePrice': basePrice,
+      'ownerFee': ownerFee,
+      'caretakerCommission': caretakerCommission,
       'totalPrice': totalPrice,
-      'platformFee': platformFee,
-      'caretakerPayout':
-          caretakerPayout == 0.0 ? (totalPrice - platformFee) : caretakerPayout,
-      'status': status,
+      'caretakerPayout': caretakerPayout,
+      'status': status.name,
       'notes': notes,
       'statusImageUrl': statusImageUrl,
-      'paymentStatus': paymentStatus,
+      'paymentStatus': paymentStatus.name,
       'paymentId': paymentId,
+      'isRated': isRated,
       'createdAt': createdAt ?? FieldValue.serverTimestamp(),
     };
   }
@@ -79,9 +94,8 @@ class Booking {
       if (value is String) return DateTime.tryParse(value);
       return null;
     }
-// ... factory continues
 
-    double parseDouble(dynamic value, double fallback) {
+    double? parseDouble(dynamic value, double? fallback) {
       if (value == null) return fallback;
       if (value is num) return value.toDouble();
       if (value is String) return double.tryParse(value) ?? fallback;
@@ -95,6 +109,10 @@ class Booking {
       return fallback;
     }
 
+    final double rawBasePrice = parseDouble(data['basePrice'], 0.0) ?? 0.0;
+    // Backward compatibility: if old booking used 'totalPrice' as the base
+    final double rawTotal = parseDouble(data['totalPrice'], rawBasePrice) ?? 0.0;
+
     return Booking(
       id: doc.id,
       caretakerId: data['caretakerId'] ?? '',
@@ -107,15 +125,23 @@ class Booking {
       timeSlot: data['timeSlot'] ?? '',
       services: List<String>.from(data['services'] ?? []),
       hours: parseInt(data['hours'], 1),
-      totalPrice: parseDouble(data['totalPrice'], 0.0),
-      platformFee: parseDouble(data['platformFee'], 15.0),
-      caretakerPayout: parseDouble(data['caretakerPayout'], 0.0),
-      status: data['status'] ?? 'pending',
+      basePrice: rawBasePrice > 0 ? rawBasePrice : rawTotal,
+      ownerFee: parseDouble(data['ownerFee'], null),
+      caretakerCommission: parseDouble(data['caretakerCommission'], null),
+      totalPrice: parseDouble(data['totalPrice'], null),
+      caretakerPayout: parseDouble(data['caretakerPayout'], null),
+      status: BookingStatus.fromString(data['status'] ?? 'pending'),
       notes: data['notes'],
       statusImageUrl: data['statusImageUrl'],
-      paymentStatus: data['paymentStatus'] ?? 'unpaid',
+      paymentStatus:
+          PaymentStatus.fromString(data['paymentStatus'] ?? 'unpaid'),
       paymentId: data['paymentId'],
+      isRated: data['isRated'] ?? false,
       createdAt: parseCreatedAt(data['createdAt']),
     );
   }
+
+  /// Helper for backward compatibility with code that checks status as string
+  String get statusString => status.name;
+  String get paymentStatusString => paymentStatus.name;
 }

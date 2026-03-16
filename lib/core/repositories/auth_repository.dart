@@ -113,11 +113,28 @@ class AuthRepository implements IAuthRepository {
     required Function(String verificationId, int? resendToken) onCodeSent,
     required Function(FirebaseAuthException e) onVerificationFailed,
   }) async {
-    // ARCHITECT: DEVELOPER BYPASS FOR DEMO
-    // Since real Phone Auth is now a billed/verified product, we simulate it for the demo.
-    debugPrint('ARCHITECT: Phone Auth Simulation Mode Active...');
-    await Future.delayed(const Duration(seconds: 1));
-    onCodeSent('demo_verify_id_${DateTime.now().millisecondsSinceEpoch}', 0);
+    // PHASE 0 SECURITY: Simulation ONLY in debug builds
+    if (kDebugMode) {
+      debugPrint('⚠️ DEBUG ONLY: Phone Auth Simulation Mode Active...');
+      await Future.delayed(const Duration(seconds: 1));
+      onCodeSent('demo_verify_id_${DateTime.now().millisecondsSinceEpoch}', 0);
+      return;
+    }
+
+    // PRODUCTION: Real Firebase Phone Authentication
+    await _auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: (PhoneAuthCredential credential) async {
+        // Auto-verification on some Android devices
+        await _auth.currentUser?.linkWithCredential(credential);
+      },
+      verificationFailed: onVerificationFailed,
+      codeSent: onCodeSent,
+      codeAutoRetrievalTimeout: (String verificationId) {
+        debugPrint('Phone auth auto-retrieval timeout: $verificationId');
+      },
+      timeout: const Duration(seconds: 60),
+    );
   }
 
   @override
@@ -125,13 +142,14 @@ class AuthRepository implements IAuthRepository {
     required String verificationId,
     required String smsCode,
   }) async {
-    // ARCHITECT: If the code is 123456, we simulate success for the demo.
-    if (smsCode == '123456' || verificationId.startsWith('demo_verify')) {
-      debugPrint(
-          'ARCHITECT: Simulation Success! Phone verified via local bypass.');
-      return; // Skip Firebase linking and just succeed for the UI
+    // PHASE 0 SECURITY: Simulation bypass ONLY in debug builds
+    if (kDebugMode &&
+        (smsCode == '123456' || verificationId.startsWith('demo_verify'))) {
+      debugPrint('⚠️ DEBUG ONLY: Phone verified via local bypass.');
+      return;
     }
 
+    // PRODUCTION: Real OTP verification and account linking
     PhoneAuthCredential credential = PhoneAuthProvider.credential(
       verificationId: verificationId,
       smsCode: smsCode,

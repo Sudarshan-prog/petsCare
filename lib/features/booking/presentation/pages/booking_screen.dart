@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:carebridge/core/providers/payment_provider.dart';
 import 'package:carebridge/core/config/app_config.dart';
+import 'package:carebridge/models/enums.dart';
 
 class BookingScreen extends ConsumerStatefulWidget {
   final Caretaker caretaker;
@@ -81,21 +82,21 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
     final authState = ref.read(authProvider);
     if (authState is AuthAuthenticated) {
-      // ARCHITECT: Revenue Model (Base + Premiums + Platform Fee)
-      final double basePrice = widget.caretaker.price * _selectedHours;
+      // Revenue Model: Base + Premiums + Owner's 2.5% Trust Fee
+      final double servicePrice = widget.caretaker.price * _selectedHours;
       double totalPremiums = 0.0;
       for (var service in _selectedServices) {
         totalPremiums += widget.caretaker.serviceFees[service] ?? 0.0;
       }
-      const double platformFee = AppConfig.platformFee;
-      final total = basePrice + totalPremiums + platformFee;
+      final double basePrice = servicePrice + totalPremiums;
+      final double ownerTotal = AppConfig.calculateOwnerTotal(basePrice);
 
-      // 2. Start Commercial Payment Flow
+      // Start Commercial Payment Flow
       ref.read(paymentProvider.notifier).startPayment(
-            amount: total,
+            amount: ownerTotal,
             contact: authState.user.phoneNumber ?? '',
             email: authState.user.email,
-            description: 'CareBridge Secure (Incl. Safety Fee: ₹15)',
+            description: 'CareBridge Booking (incl. 2.5% Safety & Trust Fee)',
             caretakerId: widget.caretaker.id,
           );
     }
@@ -104,14 +105,13 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   void _finalizeBooking(String paymentId) async {
     final authState = ref.read(authProvider);
     if (authState is AuthAuthenticated) {
-      // Re-calculate total safely with platform fee
-      final double basePrice = widget.caretaker.price * _selectedHours;
+      // Calculate prices using the new split fee model
+      final double servicePrice = widget.caretaker.price * _selectedHours;
       double totalPremiums = 0.0;
       for (var service in _selectedServices) {
         totalPremiums += widget.caretaker.serviceFees[service] ?? 0.0;
       }
-      const double platformFee = AppConfig.platformFee;
-      final total = basePrice + totalPremiums + platformFee;
+      final double basePrice = servicePrice + totalPremiums;
 
       final booking = Booking(
         caretakerId: widget.caretaker.id,
@@ -124,11 +124,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         timeSlot: _selectedTimeSlot,
         services: _selectedServices.toList(),
         hours: _selectedHours,
-        totalPrice: total,
-        platformFee: platformFee,
-        caretakerPayout: total - platformFee,
+        basePrice: basePrice, // Fees auto-calculated by Booking constructor
         notes: _notesController.text,
-        paymentStatus: 'authorized',
+        paymentStatus: PaymentStatus.authorized,
         paymentId: paymentId,
       );
 
@@ -572,8 +570,8 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     for (var s in _selectedServices) {
       totalPremiums += widget.caretaker.serviceFees[s] ?? 0.0;
     }
-    const double platformFee = AppConfig.platformFee;
-    final total = basePrice + totalPremiums + platformFee;
+    final ownerFee = AppConfig.calculateOwnerFee(basePrice + totalPremiums);
+    final total = basePrice + totalPremiums + ownerFee;
 
     return Container(
       padding: const EdgeInsets.all(24),

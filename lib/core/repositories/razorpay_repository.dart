@@ -30,14 +30,14 @@ class RazorpayRepository implements IPaymentRepository {
     required String description,
     String? caretakerId,
   }) {
-    // ARCHITECT: DEVELOPER BYPASS LOGIC
-    if (AppConfig.razorpayKey.contains('YourKeyGoesHere')) {
+    // PHASE 0 SECURITY: Developer bypass ONLY in debug builds
+    if (kDebugMode && AppConfig.razorpayKey.contains('YourKeyGoesHere')) {
       debugPrint(
-          'ARCHITECT: Razorpay Key placeholder found. Entering Simulation Mode...');
+          '⚠️ DEBUG ONLY: Razorpay key placeholder found. Simulation Mode...');
 
       Future.delayed(const Duration(seconds: 2), () {
         if (_onSuccess != null) {
-          debugPrint('ARCHITECT: Simulation Success! Triggering success.');
+          debugPrint('⚠️ DEBUG ONLY: Simulating payment success.');
           _onSuccess!(PaymentSuccessResponse(
             'pay_Simulated_${DateTime.now().millisecondsSinceEpoch}',
             null,
@@ -59,7 +59,7 @@ class RazorpayRepository implements IPaymentRepository {
         'transfers': [
           {
             'account': caretakerId,
-            'amount': ((amount - AppConfig.platformFee) * 100).toInt(),
+            'amount': (AppConfig.calculateCaretakerPayout(amount) * 100).toInt(),
             'currency': 'INR',
             'notes': {'booking_for': contact},
             'on_hold': true // ARCHITECT: Profit Protection

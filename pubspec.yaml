@@ -1,7 +1,7 @@
 name: carebridge
 description: A dual-service ecosystem connecting Pet Owners with Verified Caretakers and Adoption Hubs.
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

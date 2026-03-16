@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carebridge/core/app_theme.dart';
 import 'package:carebridge/features/booking/presentation/providers/booking_provider.dart';
 import 'package:carebridge/features/booking/data/models/booking_model.dart';
+import 'package:carebridge/models/enums.dart';
 import 'package:intl/intl.dart';
 
 class BookingHistoryScreen extends ConsumerWidget {
@@ -29,7 +30,7 @@ class BookingHistoryScreen extends ConsumerWidget {
       body: bookingsAsync.when(
         data: (bookings) {
           final historyBookings = bookings
-              .where((b) => b.status == 'completed' || b.status == 'cancelled')
+              .where((b) => b.status == BookingStatus.completed || b.status == BookingStatus.cancelled)
               .toList()
             ..sort((a, b) => b.date.compareTo(a.date));
 
@@ -65,7 +66,7 @@ class BookingHistoryScreen extends ConsumerWidget {
   }
 
   Widget _buildHistoryItem(BuildContext context, Booking booking) {
-    final bool isCompleted = booking.status == 'completed';
+    final bool isCompleted = booking.status == BookingStatus.completed;
     final Color statusColor = isCompleted ? Colors.blueGrey : AppTheme.alertRed;
 
     return Container(
@@ -108,7 +109,7 @@ class BookingHistoryScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      booking.status.toUpperCase(),
+                      booking.status.name.toUpperCase(),
                       style: TextStyle(
                         color: statusColor,
                         fontWeight: FontWeight.bold,

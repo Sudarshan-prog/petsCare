@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carebridge/core/app_theme.dart';
 import 'package:carebridge/features/booking/presentation/providers/booking_provider.dart';
 import 'package:carebridge/features/booking/data/models/booking_model.dart';
+import 'package:carebridge/models/enums.dart';
 import 'package:intl/intl.dart';
 
 class EarningsScreen extends ConsumerWidget {
@@ -29,14 +30,14 @@ class EarningsScreen extends ConsumerWidget {
       body: bookingsAsync.when(
         data: (bookings) {
           final completedBookings = bookings
-              .where((b) => b.status == 'completed' || b.status == 'confirmed')
+              .where((b) => b.status == BookingStatus.completed || b.status == BookingStatus.confirmed)
               .toList()
             ..sort((a, b) => b.date.compareTo(a.date));
 
+          // Use actual caretakerPayout (already accounts for 2.5% commission)
           final double totalEarnings =
-              completedBookings.fold(0, (sum, b) => sum + b.totalPrice);
-          final double availableBalance =
-              totalEarnings * 0.9; // Simulate 10% platform fee
+              completedBookings.fold(0, (sum, b) => sum + b.caretakerPayout);
+          final double availableBalance = totalEarnings;
 
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),

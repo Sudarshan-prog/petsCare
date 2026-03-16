@@ -10,6 +10,7 @@ import 'package:carebridge/features/booking/data/models/booking_model.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:carebridge/models/enums.dart';
 
 class CaretakerHomeScreen extends ConsumerWidget {
   const CaretakerHomeScreen({super.key});
@@ -109,8 +110,8 @@ class CaretakerHomeScreen extends ConsumerWidget {
   Widget _buildEarningsCard(
       BuildContext context, Caretaker? caretaker, List<Booking> bookings) {
     final double totalRevenue = bookings
-        .where((b) => b.status == 'confirmed' || b.status == 'completed')
-        .fold(0, (sum, b) => sum + b.totalPrice);
+        .where((b) => b.status == BookingStatus.confirmed || b.status == BookingStatus.completed)
+        .fold(0, (sum, b) => sum + b.caretakerPayout);
 
     return Container(
       width: double.infinity,
@@ -210,7 +211,7 @@ class CaretakerHomeScreen extends ConsumerWidget {
       data: (bookings) {
         // ARCHITECT: Only show active jobs (Pending, Confirmed, Cancelled)
         final activeJobs =
-            bookings.where((b) => b.status != 'completed').toList();
+            bookings.where((b) => b.status != BookingStatus.completed).toList();
 
         if (activeJobs.isEmpty) {
           return Container(
@@ -325,7 +326,7 @@ class CaretakerHomeScreen extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      booking.status.toUpperCase(),
+                      booking.status.name.toUpperCase(),
                       style: TextStyle(
                           color: _getStatusColor(booking.status),
                           fontSize: 10,
@@ -336,7 +337,7 @@ class CaretakerHomeScreen extends ConsumerWidget {
               ),
             ],
           ),
-          if (booking.status == 'pending') ...[
+          if (booking.status == BookingStatus.pending) ...[
             const SizedBox(height: 16),
             Row(
               children: [
@@ -403,7 +404,7 @@ class CaretakerHomeScreen extends ConsumerWidget {
               ],
             ),
           ],
-          if (booking.status == 'confirmed') ...[
+          if (booking.status == BookingStatus.confirmed) ...[
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -463,13 +464,13 @@ class CaretakerHomeScreen extends ConsumerWidget {
     }
   }
 
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(BookingStatus status) {
     switch (status) {
-      case 'pending':
+      case BookingStatus.pending:
         return Colors.orange;
-      case 'confirmed':
+      case BookingStatus.confirmed:
         return Colors.green;
-      case 'cancelled':
+      case BookingStatus.cancelled:
         return AppTheme.alertRed;
       default:
         return Colors.grey;

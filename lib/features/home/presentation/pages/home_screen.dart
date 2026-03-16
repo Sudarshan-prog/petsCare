@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:carebridge/core/auth/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:carebridge/models/enums.dart';
 
 import 'package:carebridge/features/booking/presentation/providers/booking_provider.dart';
 import 'package:carebridge/features/booking/data/models/booking_model.dart';
@@ -204,13 +205,13 @@ class HomeScreen extends ConsumerWidget {
     Color statusColor = Colors.orange;
     IconData statusIcon = Icons.access_time_rounded;
 
-    if (booking.status == 'confirmed') {
+    if (booking.status == BookingStatus.confirmed) {
       statusColor = Colors.green;
       statusIcon = Icons.check_circle_rounded;
-    } else if (booking.status == 'completed') {
+    } else if (booking.status == BookingStatus.completed) {
       statusColor = Colors.blueGrey;
       statusIcon = Icons.task_alt_rounded;
-    } else if (booking.status == 'cancelled') {
+    } else if (booking.status == BookingStatus.cancelled) {
       statusColor = AppTheme.alertRed;
       statusIcon = Icons.cancel_rounded;
     }
@@ -245,7 +246,7 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                booking.status.toUpperCase(),
+                booking.status.name.toUpperCase(),
                 style: TextStyle(
                   color: statusColor,
                   fontWeight: FontWeight.bold,
@@ -392,7 +393,7 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
           ],
-          if (booking.status == 'pending') ...[
+          if (booking.status == BookingStatus.pending) ...[
             const SizedBox(height: 12),
             Builder(
               builder: (context) {
@@ -459,7 +460,7 @@ class HomeScreen extends ConsumerWidget {
               },
             ),
           ],
-          if (booking.status == 'confirmed') ...[
+          if (booking.status == BookingStatus.confirmed) ...[
             const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerRight,

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:carebridge/core/providers/payment_provider.dart';
 import 'package:carebridge/core/repositories/payment_repository_interface.dart';
+import 'package:carebridge/models/enums.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carebridge/features/booking/data/models/booking_model.dart';
@@ -30,48 +31,61 @@ class BookingNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  Future<void> updateBookingStatus(String bookingId, String status) async {
+  Future<void> updateBookingStatus(String bookingId, String newStatus) async {
     try {
       final booking = await _repository.getBookingById(bookingId);
       if (booking == null) return;
 
-      // ARCHITECT: BLUEPRINT A - AUTHORIZE & CAPTURE LOGIC
-      if (status == 'confirmed' && booking.paymentStatus == 'authorized') {
-        debugPrint("💰 ARCHITECT: Caretaker ACCEPTED. Capturing funds...");
+      final targetStatus = BookingStatus.fromString(newStatus);
+
+      // Validate state transition
+      if (!booking.status.canTransitionTo(targetStatus)) {
+        debugPrint(
+            '⚠️ Invalid transition: ${booking.status.name} → ${targetStatus.name}');
+        return;
+      }
+
+      // PHASE 0: Payment logic — still client-side until Phase 1 Cloud Functions
+      if (targetStatus == BookingStatus.confirmed &&
+          booking.paymentStatus == PaymentStatus.authorized) {
+        debugPrint("💰 Caretaker ACCEPTED. Capturing funds...");
         if (booking.paymentId != null) {
           await _paymentRepository.capturePayment(
               booking.paymentId!, booking.totalPrice);
-          await _repository.updateBookingPaymentStatus(bookingId, 'paid');
+          await _repository.updateBookingPaymentStatus(
+              bookingId, PaymentStatus.paid.name);
         }
-      } else if (status == 'cancelled' &&
-          booking.paymentStatus == 'authorized') {
-        debugPrint(
-            "🛡️ ARCHITECT: Caretaker REJECTED. Releasing authorization (FREE)...");
+      } else if (targetStatus == BookingStatus.cancelled &&
+          booking.paymentStatus == PaymentStatus.authorized) {
+        debugPrint("🛡️ Booking CANCELLED. Releasing authorization...");
         if (booking.paymentId != null) {
           await _paymentRepository.releasePayment(booking.paymentId!);
-          await _repository.updateBookingPaymentStatus(bookingId, 'released');
+          await _repository.updateBookingPaymentStatus(
+              bookingId, PaymentStatus.released.name);
         }
-      } else if (status == 'cancelled' && booking.paymentStatus == 'paid') {
-        // This is a post-acceptance cancellation (requires standard refund)
-        debugPrint(
-            "⚠️ ARCHITECT: Post-acceptance cancellation. Refunding (Standard Fee applies)...");
+      } else if (targetStatus == BookingStatus.cancelled &&
+          booking.paymentStatus == PaymentStatus.paid) {
+        debugPrint("⚠️ Post-acceptance cancellation. Refunding...");
         if (booking.paymentId != null) {
           await _paymentRepository.refundPayment(booking.paymentId!);
-          await _repository.updateBookingPaymentStatus(bookingId, 'refunded');
+          await _repository.updateBookingPaymentStatus(
+              bookingId, PaymentStatus.refunded.name);
         }
       }
 
-      // ARCHITECT: Purge photos if job is finished
-      if (status == 'completed' || status == 'cancelled') {
+      // Purge photos if job is finished
+      if (targetStatus == BookingStatus.completed ||
+          targetStatus == BookingStatus.cancelled) {
         if (booking.statusImageUrl != null &&
             booking.statusImageUrl!.startsWith('http')) {
           await _storage.deleteImage(booking.statusImageUrl!);
         }
       }
 
-      await _repository.updateBookingStatus(bookingId, status);
+      await _repository.updateBookingStatus(bookingId, targetStatus.name);
 
-      if (status == 'completed' || status == 'cancelled') {
+      if (targetStatus == BookingStatus.completed ||
+          targetStatus == BookingStatus.cancelled) {
         await _repository.updateBookingImageUrl(bookingId, null);
       }
     } catch (e) {
@@ -99,6 +113,11 @@ class BookingNotifier extends StateNotifier<AsyncValue<void>> {
 
   Future<void> rateCaretaker(String caretakerId, double rating) async {
     try {
+      // TODO Phase 1: Move to Cloud Function with booking validation
+      if (rating < 1.0 || rating > 5.0) {
+        debugPrint("⚠️ Invalid rating: $rating. Must be 1.0-5.0");
+        return;
+      }
       await _caretakerRepository.updateCaretakerRating(caretakerId, rating);
     } catch (e) {
       debugPrint("Error rating caretaker: $e");

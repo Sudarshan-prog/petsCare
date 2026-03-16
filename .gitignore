@@ -47,6 +47,7 @@ app.*.map.json
 # ARCHITECT SECURITY: Secrets and Sensitive Configs
 **/*.json
 !firebase.json
+!firestore.indexes.json
 **/*.properties
 **/*.keystore
 **/*.jks
@@ -55,6 +56,11 @@ scripts/service-account.json
 google-services.json
 GoogleService-Info.plist
 lib/core/config/app_config.dart
+lib/firebase_options.dart
+
+# Cloud Functions secrets
+functions/.env*
+functions/service-account*.json
 
 # Flutter
 .flutter-plugins*
