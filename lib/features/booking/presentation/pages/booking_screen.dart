@@ -4,14 +4,12 @@ import 'package:carebridge/core/app_theme.dart';
 import 'package:carebridge/core/providers/caretaker_provider.dart';
 import 'package:carebridge/core/providers/pet_provider.dart';
 import 'package:carebridge/core/auth/auth_provider.dart';
-import 'package:carebridge/features/booking/data/models/booking_model.dart';
 import 'package:carebridge/features/booking/presentation/providers/booking_provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:carebridge/core/providers/payment_provider.dart';
 import 'package:carebridge/core/config/app_config.dart';
-import 'package:carebridge/models/enums.dart';
 
 class BookingScreen extends ConsumerStatefulWidget {
   final Caretaker caretaker;
@@ -105,52 +103,48 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   void _finalizeBooking(String paymentId) async {
     final authState = ref.read(authProvider);
     if (authState is AuthAuthenticated) {
-      // Calculate prices using the new split fee model
-      final double servicePrice = widget.caretaker.price * _selectedHours;
-      double totalPremiums = 0.0;
-      for (var service in _selectedServices) {
-        totalPremiums += widget.caretaker.serviceFees[service] ?? 0.0;
-      }
-      final double basePrice = servicePrice + totalPremiums;
-
-      final booking = Booking(
+      // PHASE 2: Server-side booking creation via Cloud Function
+      // The server calculates all prices, preventing client manipulation
+      final result = await ref.read(bookingProvider.notifier).createBookingViaServer(
         caretakerId: widget.caretaker.id,
-        caretakerName: widget.caretaker.name,
-        ownerId: authState.user.id,
-        ownerName: authState.user.name,
         petId: _selectedPet!.id,
         petName: _selectedPet!.name,
-        date: _selectedDate,
-        timeSlot: _selectedTimeSlot,
         services: _selectedServices.toList(),
         hours: _selectedHours,
-        basePrice: basePrice, // Fees auto-calculated by Booking constructor
+        date: _selectedDate.toIso8601String(),
+        timeSlot: _selectedTimeSlot,
         notes: _notesController.text,
-        paymentStatus: PaymentStatus.authorized,
         paymentId: paymentId,
       );
 
-      await ref.read(bookingProvider.notifier).createBooking(booking);
-
       if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: const Text('Booking Requested!'),
-            content: const Text(
-                'Your booking request has been sent to the professional. You will be notified once they confirm.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // dialog
-                  Navigator.of(context).pop(); // booking screen
-                },
-                child: const Text('Great!'),
-              ),
-            ],
-          ),
-        );
+        if (result != null && result['success'] == true) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              title: const Text('Booking Requested!'),
+              content: Text(
+                  'Your booking request has been sent. Total charged: ₹${result['totalPrice']}'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // dialog
+                    Navigator.of(context).pop(); // booking screen
+                  },
+                  child: const Text('Great!'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Booking failed. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }

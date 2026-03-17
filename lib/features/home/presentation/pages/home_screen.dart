@@ -497,17 +497,19 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       );
 
-                      if (rating != null) {
-                        await ref
+                      if (rating != null && booking.id != null) {
+                        final success = await ref
                             .read(bookingProvider.notifier)
-                            .rateCaretaker(booking.caretakerId, rating);
+                            .submitRatingViaServer(booking.id!, rating);
 
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                  '✨ Rating submitted! Thank you for your feedback.'),
-                              backgroundColor: AppTheme.safetyTeal,
+                            SnackBar(
+                              content: Text(success
+                                  ? '✨ Rating submitted! Thank you for your feedback.'
+                                  : '❌ Rating failed. Please try again.'),
+                              backgroundColor:
+                                  success ? AppTheme.safetyTeal : Colors.red,
                             ),
                           );
                         }

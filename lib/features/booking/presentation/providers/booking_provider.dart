@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:carebridge/core/providers/payment_provider.dart';
 import 'package:carebridge/core/repositories/payment_repository_interface.dart';
-import 'package:carebridge/models/enums.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carebridge/features/booking/data/models/booking_model.dart';
@@ -16,10 +16,118 @@ class BookingNotifier extends StateNotifier<AsyncValue<void>> {
   final IStorageRepository _storage;
   final ICaretakerRepository _caretakerRepository;
   final IPaymentRepository _paymentRepository;
+  final FirebaseFunctions _functions;
 
   BookingNotifier(this._repository, this._storage, this._caretakerRepository,
       this._paymentRepository)
-      : super(const AsyncValue.data(null));
+      : _functions = FirebaseFunctions.instance,
+        super(const AsyncValue.data(null));
+
+  /// PHASE 2: Create booking via Cloud Function (server-side price calculation)
+  Future<Map<String, dynamic>?> createBookingViaServer({
+    required String caretakerId,
+    required String petId,
+    required String petName,
+    required List<String> services,
+    required int hours,
+    required String date,
+    required String timeSlot,
+    String? notes,
+    String? paymentId,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final result =
+          await _functions.httpsCallable('createBooking').call({
+        'caretakerId': caretakerId,
+        'petId': petId,
+        'petName': petName,
+        'services': services,
+        'hours': hours,
+        'date': date,
+        'timeSlot': timeSlot,
+        'notes': notes ?? '',
+        'paymentId': paymentId,
+      });
+
+      final data = Map<String, dynamic>.from(result.data);
+      debugPrint('✅ Booking created via Cloud Function: ${data['bookingId']}');
+      debugPrint('   Total: ₹${data['totalPrice']}, Caretaker gets: ₹${data['caretakerPayout']}');
+
+      state = const AsyncValue.data(null);
+      return data;
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint('❌ Cloud Function error: ${e.code} - ${e.message}');
+      state = AsyncValue.error(e.message ?? 'Booking failed', StackTrace.current);
+      return null;
+    } catch (e, stack) {
+      debugPrint('❌ Booking error: $e');
+      state = AsyncValue.error(e, stack);
+      return null;
+    }
+  }
+
+  /// PHASE 2: Update booking status via Cloud Function (server-side validation)
+  Future<bool> updateBookingStatusViaServer(String bookingId, String newStatus) async {
+    try {
+      final result =
+          await _functions.httpsCallable('updateBookingStatus').call({
+        'bookingId': bookingId,
+        'newStatus': newStatus,
+      });
+
+      final data = Map<String, dynamic>.from(result.data);
+      debugPrint('✅ Status updated via Cloud Function: $bookingId → $newStatus');
+      return data['success'] == true;
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint('❌ Status update error: ${e.code} - ${e.message}');
+      return false;
+    } catch (e) {
+      debugPrint('❌ Status update error: $e');
+      return false;
+    }
+  }
+
+  /// PHASE 2: Submit rating via Cloud Function (server-side validation)
+  Future<bool> submitRatingViaServer(String bookingId, double rating) async {
+    try {
+      final result =
+          await _functions.httpsCallable('submitRating').call({
+        'bookingId': bookingId,
+        'rating': rating,
+      });
+
+      final data = Map<String, dynamic>.from(result.data);
+      debugPrint('✅ Rating submitted via Cloud Function: $rating stars');
+      return data['success'] == true;
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint('❌ Rating error: ${e.code} - ${e.message}');
+      return false;
+    } catch (e) {
+      debugPrint('❌ Rating error: $e');
+      return false;
+    }
+  }
+
+  /// PHASE 2: Delete account via Cloud Function (cascade deletion)
+  Future<bool> deleteAccountViaServer() async {
+    try {
+      final result =
+          await _functions.httpsCallable('deleteAccount').call();
+
+      final data = Map<String, dynamic>.from(result.data);
+      debugPrint('✅ Account deleted via Cloud Function');
+      return data['success'] == true;
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint('❌ Account deletion error: ${e.code} - ${e.message}');
+      return false;
+    } catch (e) {
+      debugPrint('❌ Account deletion error: $e');
+      return false;
+    }
+  }
+
+  // === LEGACY METHODS (kept for backward compatibility during migration) ===
 
   Future<void> createBooking(Booking booking) async {
     state = const AsyncValue.loading();
@@ -32,64 +140,16 @@ class BookingNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   Future<void> updateBookingStatus(String bookingId, String newStatus) async {
-    try {
-      final booking = await _repository.getBookingById(bookingId);
-      if (booking == null) return;
-
-      final targetStatus = BookingStatus.fromString(newStatus);
-
-      // Validate state transition
-      if (!booking.status.canTransitionTo(targetStatus)) {
-        debugPrint(
-            '⚠️ Invalid transition: ${booking.status.name} → ${targetStatus.name}');
-        return;
+    // PHASE 2: Route through Cloud Function
+    final success = await updateBookingStatusViaServer(bookingId, newStatus);
+    if (!success) {
+      debugPrint('⚠️ Cloud Function failed, falling back to direct write');
+      // Fallback to direct write (will be removed in Phase 3)
+      try {
+        await _repository.updateBookingStatus(bookingId, newStatus);
+      } catch (e) {
+        debugPrint("Error updating booking status: $e");
       }
-
-      // PHASE 0: Payment logic — still client-side until Phase 1 Cloud Functions
-      if (targetStatus == BookingStatus.confirmed &&
-          booking.paymentStatus == PaymentStatus.authorized) {
-        debugPrint("💰 Caretaker ACCEPTED. Capturing funds...");
-        if (booking.paymentId != null) {
-          await _paymentRepository.capturePayment(
-              booking.paymentId!, booking.totalPrice);
-          await _repository.updateBookingPaymentStatus(
-              bookingId, PaymentStatus.paid.name);
-        }
-      } else if (targetStatus == BookingStatus.cancelled &&
-          booking.paymentStatus == PaymentStatus.authorized) {
-        debugPrint("🛡️ Booking CANCELLED. Releasing authorization...");
-        if (booking.paymentId != null) {
-          await _paymentRepository.releasePayment(booking.paymentId!);
-          await _repository.updateBookingPaymentStatus(
-              bookingId, PaymentStatus.released.name);
-        }
-      } else if (targetStatus == BookingStatus.cancelled &&
-          booking.paymentStatus == PaymentStatus.paid) {
-        debugPrint("⚠️ Post-acceptance cancellation. Refunding...");
-        if (booking.paymentId != null) {
-          await _paymentRepository.refundPayment(booking.paymentId!);
-          await _repository.updateBookingPaymentStatus(
-              bookingId, PaymentStatus.refunded.name);
-        }
-      }
-
-      // Purge photos if job is finished
-      if (targetStatus == BookingStatus.completed ||
-          targetStatus == BookingStatus.cancelled) {
-        if (booking.statusImageUrl != null &&
-            booking.statusImageUrl!.startsWith('http')) {
-          await _storage.deleteImage(booking.statusImageUrl!);
-        }
-      }
-
-      await _repository.updateBookingStatus(bookingId, targetStatus.name);
-
-      if (targetStatus == BookingStatus.completed ||
-          targetStatus == BookingStatus.cancelled) {
-        await _repository.updateBookingImageUrl(bookingId, null);
-      }
-    } catch (e) {
-      debugPrint("Error updating booking status: $e");
     }
   }
 
@@ -113,7 +173,6 @@ class BookingNotifier extends StateNotifier<AsyncValue<void>> {
 
   Future<void> rateCaretaker(String caretakerId, double rating) async {
     try {
-      // TODO Phase 1: Move to Cloud Function with booking validation
       if (rating < 1.0 || rating > 5.0) {
         debugPrint("⚠️ Invalid rating: $rating. Must be 1.0-5.0");
         return;
