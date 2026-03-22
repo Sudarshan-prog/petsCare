@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "910889686127",
+    "firebase_url": "https://carebridge-pet-ap-default-rtdb.asia-southeast1.firebasedatabase.app",
     "project_id": "carebridge-pet-ap",
     "storage_bucket": "carebridge-pet-ap.firebasestorage.app"
   },
@@ -12,15 +13,40 @@
           "package_name": "com.carebridge.carebridge"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "910889686127-vn10orc1s1n01bupsu0lf10lio8bh17o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.carebridge.carebridge",
+            "certificate_hash": "b26cbeb6b5a740089d5c21c341c64ea1b34b285c"
+          }
+        },
+        {
+          "client_id": "910889686127-l3pv6ekq7gehn8lgajrjoajnc93ho429.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyBB8NQsWYDR72zt-CFv7k65nPL99JxFiEE"
+          "current_key": "AIzaSyCaWG7OnkkVEY6bbnbx9yX9AlMWtYlgV_4"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "910889686127-l3pv6ekq7gehn8lgajrjoajnc93ho429.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "910889686127-6j5qrafhg8k3ch87uhs9e74uqh24hepd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.carebridge.carebridge"
+              }
+            }
+          ]
         }
       }
     }

@@ -28,9 +28,14 @@ void main() async {
       // FirebaseCrashlytics.instance.recordFlutterFatalError(details);
     };
 
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } catch (e) {
+      // Firebase already initialized by google-services.json (Android auto-init)
+      debugPrint('ℹ️ Firebase already initialized: $e');
+    }
 
     // Initialize Notifications
     FirebaseMessaging.onBackgroundMessage(

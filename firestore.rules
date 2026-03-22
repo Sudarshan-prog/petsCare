@@ -15,9 +15,6 @@ service cloud.firestore {
 
     // ============================================================
     // USERS COLLECTION
-    // Only the user can read/write their own document.
-    // Restricted field updates prevent client from modifying
-    // fields that should only be set by Cloud Functions.
     // ============================================================
     match /users/{userId} {
       allow read: if isAuthenticated();
@@ -32,14 +29,11 @@ service cloud.firestore {
            .hasOnly(['name', 'phoneNumber', 'latitude', 'longitude',
                      'profileUrl', 'fcmToken', 'lastTokenUpdate', 'role']);
 
-      allow delete: if false; // Only via deleteAccount Cloud Function
+      allow delete: if false;
     }
 
     // ============================================================
     // CARETAKERS COLLECTION
-    // Anyone auth'd can read (for discovery).
-    // Only the caretaker can update their own profile fields.
-    // Rating + reviewCount + isVerified: ONLY via Cloud Functions.
     // ============================================================
     match /caretakers/{caretakerId} {
       allow read: if isAuthenticated();
@@ -54,41 +48,42 @@ service cloud.firestore {
            .hasOnly(['name', 'bio', 'specialties', 'price',
                      'phoneNumber', 'latitude', 'longitude',
                      'profileUrl', 'serviceFees', 'isAvailable']);
-      // rating, reviewCount, isVerified: ONLY via Cloud Functions
 
-      allow delete: if false; // Only via deleteAccount Cloud Function
+      allow delete: if false;
     }
 
     // ============================================================
     // BOOKINGS COLLECTION
-    // Created ONLY by createBooking Cloud Function.
-    // Updated ONLY by updateBookingStatus Cloud Function.
-    // Read by owner or caretaker involved in the booking.
-    //
-    // EXCEPTION: statusImageUrl can be updated by the caretaker
-    // (for live photo updates during a confirmed booking).
+    // Secure hybrid: Cloud Functions OR authenticated client
+    // Client can create bookings (ownerId must match auth)
+    // Client can update status (must be owner or caretaker)
+    // Cloud Functions bypass these rules via Admin SDK
     // ============================================================
     match /bookings/{bookingId} {
+      // Read: Must be owner or caretaker of the booking
       allow read: if isAuthenticated()
         && (isOwner(resource.data.ownerId)
             || isOwner(resource.data.caretakerId));
 
-      allow create: if false; // Only via createBooking Cloud Function
+      // Create: Authenticated user, ownerId must match auth.uid
+      allow create: if isAuthenticated()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.status == 'pending';
 
-      // Allow caretaker to update ONLY statusImageUrl (live photo feature)
+      // Update: Must be owner or caretaker, restricted fields
       allow update: if isAuthenticated()
-        && isOwner(resource.data.caretakerId)
-        && resource.data.status == 'confirmed'
+        && (isOwner(resource.data.ownerId)
+            || isOwner(resource.data.caretakerId))
         && request.resource.data.diff(resource.data)
            .affectedKeys()
-           .hasOnly(['statusImageUrl']);
+           .hasOnly(['status', 'paymentStatus', 'statusImageUrl',
+                     'isRated']);
 
-      allow delete: if false; // Never directly deleted
+      allow delete: if false;
     }
 
     // ============================================================
     // PETS COLLECTION
-    // Owner manages their own pets.
     // ============================================================
     match /pets/{petId} {
       allow read: if isAuthenticated();

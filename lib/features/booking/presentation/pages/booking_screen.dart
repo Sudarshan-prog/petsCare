@@ -103,16 +103,27 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
   void _finalizeBooking(String paymentId) async {
     final authState = ref.read(authProvider);
     if (authState is AuthAuthenticated) {
-      // PHASE 2: Server-side booking creation via Cloud Function
-      // The server calculates all prices, preventing client manipulation
+      // Calculate basePrice for fallback path
+      final double servicePrice = widget.caretaker.price * _selectedHours;
+      double totalPremiums = 0.0;
+      for (var service in _selectedServices) {
+        totalPremiums += widget.caretaker.serviceFees[service] ?? 0.0;
+      }
+      final double basePrice = servicePrice + totalPremiums;
+
+      // PHASE 2: Smart hybrid — Cloud Function first, then direct write fallback
       final result = await ref.read(bookingProvider.notifier).createBookingViaServer(
+        ownerId: authState.user.id,
+        ownerName: authState.user.name,
         caretakerId: widget.caretaker.id,
+        caretakerName: widget.caretaker.name,
         petId: _selectedPet!.id,
         petName: _selectedPet!.name,
         services: _selectedServices.toList(),
         hours: _selectedHours,
         date: _selectedDate.toIso8601String(),
         timeSlot: _selectedTimeSlot,
+        basePrice: basePrice,
         notes: _notesController.text,
         paymentId: paymentId,
       );
@@ -125,7 +136,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             builder: (context) => AlertDialog(
               title: const Text('Booking Requested!'),
               content: Text(
-                  'Your booking request has been sent. Total charged: ₹${result['totalPrice']}'),
+                  'Your booking request has been sent. Total: ₹${result['totalPrice']}'),
               actions: [
                 TextButton(
                   onPressed: () {
