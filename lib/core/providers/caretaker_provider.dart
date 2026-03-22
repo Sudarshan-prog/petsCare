@@ -81,11 +81,14 @@ final caretakerRepositoryProvider = Provider<ICaretakerRepository>((ref) {
 });
 
 final caretakerStreamProvider = StreamProvider<List<Caretaker>>((ref) {
+  final authState = ref.watch(authProvider);
+  if (authState is! AuthAuthenticated) return Stream.value([]);
   return ref.watch(caretakerRepositoryProvider).caretakersStream;
 });
 
-final singleCaretakerProvider =
-    StreamProvider.family<Caretaker?, String>((ref, id) {
+final singleCaretakerProvider = StreamProvider.family<Caretaker?, String>((ref, id) {
+  final authState = ref.watch(authProvider);
+  if (authState is! AuthAuthenticated) return Stream.value(null);
   return ref.watch(caretakerRepositoryProvider).getCaretakerStream(id);
 });
 

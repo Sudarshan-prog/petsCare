@@ -11,6 +11,7 @@ import 'package:carebridge/features/booking/data/models/booking_model.dart';
 import 'package:carebridge/core/providers/caretaker_provider.dart';
 import 'package:carebridge/features/booking/presentation/pages/booking_screen.dart';
 import 'package:carebridge/features/booking/presentation/widgets/rating_dialog.dart';
+import 'package:carebridge/features/home/presentation/widgets/service_grid.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -45,7 +46,7 @@ class HomeScreen extends ConsumerWidget {
 
                 _buildSectionTitle(context, 'Premium Services'),
                 const SizedBox(height: 16),
-                _buildServiceGrid(context),
+                const ServiceGrid(),
 
                 const SizedBox(height: 40),
                 _buildMyBookings(context, ref),
@@ -149,8 +150,9 @@ class HomeScreen extends ConsumerWidget {
     return bookingsAsync.when(
       data: (bookings) {
         // ARCHITECT: Filter out completed bookings. They belong in history.
-        final activeBookings =
-            bookings.where((b) => b.status != 'completed').toList();
+        final activeBookings = bookings
+            .where((b) => b.status != BookingStatus.completed && b.status != BookingStatus.cancelled)
+            .toList();
 
         if (activeBookings.isEmpty) {
           return const Padding(
@@ -466,6 +468,11 @@ class HomeScreen extends ConsumerWidget {
               alignment: Alignment.centerRight,
               child: ElevatedButton.icon(
                 onPressed: () async {
+                  // ARCHITECT FIX: Capture parent states BEFORE async gap since this 
+                  // card will instantly unmount when 'completed' filters it out.
+                  final navigator = Navigator.of(context);
+                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+
                   final confirmed = await showDialog<bool>(
                     context: context,
                     builder: (context) => AlertDialog(
@@ -487,11 +494,12 @@ class HomeScreen extends ConsumerWidget {
                   if (confirmed == true) {
                     await ref
                         .read(bookingProvider.notifier)
-                        .updateBookingStatus(booking.id!, 'completed');
+                        .updateBookingStatus(booking.id!, BookingStatus.completed.name);
 
-                    if (context.mounted) {
+                    // Uses the resilient navigator.context so it fires even after card unmounts
+                    if (navigator.mounted) {
                       final double? rating = await showDialog<double>(
-                        context: context,
+                        context: navigator.context,
                         builder: (context) => CaretakerRatingDialog(
                           caretakerName: booking.caretakerName,
                         ),
@@ -500,19 +508,18 @@ class HomeScreen extends ConsumerWidget {
                       if (rating != null && booking.id != null) {
                         final success = await ref
                             .read(bookingProvider.notifier)
-                            .submitRatingViaServer(booking.id!, rating);
+                            .submitRatingViaServer(
+                                booking.id!, booking.caretakerId, rating);
 
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(success
-                                  ? '✨ Rating submitted! Thank you for your feedback.'
-                                  : '❌ Rating failed. Please try again.'),
-                              backgroundColor:
-                                  success ? AppTheme.safetyTeal : Colors.red,
-                            ),
-                          );
-                        }
+                        scaffoldMessenger.showSnackBar(
+                          SnackBar(
+                            content: Text(success
+                                ? '✨ Rating submitted! Thank you for your feedback.'
+                                : '❌ Rating failed. Please try again.'),
+                            backgroundColor:
+                                success ? AppTheme.safetyTeal : Colors.red,
+                          ),
+                        );
                       }
                     }
 

@@ -44,6 +44,12 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     Future.microtask(() => ref.read(paymentProvider.notifier).init());
   }
 
+  @override
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
