@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CareBridge – Final Project Report</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap');
+
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1e40af;
+      --accent: #f59e0b;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg-light: #f8fafc;
+      --bg-teal: #e0f2fe;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      background: #fff;
+      font-size: 11pt;
+      line-height: 1.7;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    /* ── COVER PAGE ─────────────────────────────────────── */
+    .cover {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 60px 40px;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f4c75 100%);
+      color: white;
+      page-break-after: always;
+    }
+
+    .cover-badge {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+      padding: 6px 18px;
+      border-radius: 50px;
+      font-size: 9pt;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 30px;
+    }
+
+    .cover-logo {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #38bdf8, #2563eb);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      margin: 0 auto 24px;
+      box-shadow: 0 20px 60px rgba(37, 99, 235, 0.4);
+    }
+
+    .cover h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 52pt;
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 8px;
+      letter-spacing: -1px;
+    }
+
+    .cover h1 span {
+      color: #38bdf8;
+    }
+
+    .cover-subtitle {
+      font-size: 14pt;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 50px;
+      font-weight: 300;
+    }
+
+    .cover-meta {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .cover-meta-item {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .cover-meta-item .label {
+      font-size: 7pt;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .cover-meta-item .value {
+      font-size: 10pt;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .cover-footer {
+      margin-top: 60px;
+      font-size: 8pt;
+      color: rgba(255, 255, 255, 0.35);
+      letter-spacing: 0.5px;
+    }
+
+    /* ── PAGE LAYOUT ────────────────────────────────────── */
+    .page {
+      padding: 50px 60px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .section {
+      margin-bottom: 48px;
+    }
+
+    /* ── HEADINGS ───────────────────────────────────────── */
+    h2 {
+      font-size: 20pt;
+      font-weight: 700;
+      color: var(--primary-dark);
+      border-bottom: 3px solid var(--primary);
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2 .section-num {
+      background: var(--primary);
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12pt;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    h3 {
+      font-size: 13pt;
+      font-weight: 600;
+      color: var(--primary);
+      margin: 24px 0 10px;
+    }
+
+    h4 {
+      font-size: 11pt;
+      font-weight: 600;
+      color: var(--text);
+      margin: 16px 0 6px;
+    }
+
+    p {
+      margin-bottom: 10px;
+    }
+
+    /* ── HIGHLIGHT BOX ──────────────────────────────────── */
+    .highlight {
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      border-left: 4px solid var(--primary);
+      border-radius: 0 12px 12px 0;
+      padding: 18px 22px;
+      margin: 20px 0;
+      font-size: 10.5pt;
+    }
+
+    .highlight strong {
+      color: var(--primary-dark);
+    }
+
+    /* ── CALLOUT ────────────────────────────────────────── */
+    .callout {
+      background: #fff8ed;
+      border: 1px solid #fde68a;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 20px 0;
+      font-size: 10pt;
+    }
+
+    .callout-title {
+      font-weight: 700;
+      color: #92400e;
+      font-size: 10pt;
+      margin-bottom: 4px;
+    }
+
+    /* ── FEATURE CARDS ──────────────────────────────────── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      background: var(--bg-light);
+    }
+
+    .card-icon {
+      font-size: 22pt;
+      margin-bottom: 10px;
+    }
+
+    .card h4 {
+      font-size: 11pt;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin: 0 0 6px;
+    }
+
+    .card p {
+      font-size: 9.5pt;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    /* ── TABLE ──────────────────────────────────────────── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 9.5pt;
+    }
+
+    thead tr {
+      background: var(--primary);
+      color: white;
+    }
+
+    thead th {
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    tbody tr:nth-child(even) {
+      background: var(--bg-light);
+    }
+
+    tbody td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── TECH STACK PILLS ───────────────────────────────── */
+    .pill-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    .pill {
+      background: var(--bg-teal);
+      border: 1px solid #bae6fd;
+      color: #0c4a6e;
+      padding: 5px 14px;
+      border-radius: 50px;
+      font-size: 9pt;
+      font-weight: 600;
+    }
+
+    /* ── ARCHITECTURE DIAGRAM ───────────────────────────── */
+    .arch-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 12px;
+      padding: 28px;
+      font-family: 'Courier New', monospace;
+      font-size: 9pt;
+      line-height: 2;
+      overflow: hidden;
+      margin: 16px 0;
+    }
+
+    .arch-layer {
+      text-align: center;
+      padding: 10px;
+      border-radius: 8px;
+      margin: 6px 0;
+      font-weight: 600;
+      font-size: 9.5pt;
+      letter-spacing: 0.3px;
+    }
+
+    .layer-mobile {
+      background: #1e3a5f;
+      color: #93c5fd;
+    }
+
+    .layer-state {
+      background: #14532d;
+      color: #86efac;
+    }
+
+    .layer-fire {
+      background: #7c2d12;
+      color: #fdba74;
+    }
+
+    .layer-db {
+      background: #4c1d95;
+      color: #c4b5fd;
+    }
+
+    .arch-arrow {
+      text-align: center;
+      color: #475569;
+      font-size: 14pt;
+    }
+
+    /* ── TIMELINE / ROADMAP ─────────────────────────────── */
+    .timeline {
+      margin: 16px 0;
+    }
+
+    .timeline-item {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .tl-num {
+      background: var(--primary);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 10pt;
+      flex-shrink: 0;
+    }
+
+    .tl-content h4 {
+      margin: 4px 0 4px;
+    }
+
+    .tl-content p {
+      font-size: 9.5pt;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    /* ── DATABASE RULES SNIPPET ─────────────────────────── */
+    .code-block {
+      background: #1e293b;
+      color: #94a3b8;
+      border-radius: 10px;
+      padding: 18px 22px;
+      font-family: 'Courier New', monospace;
+      font-size: 8.5pt;
+      line-height: 1.8;
+      margin: 14px 0;
+      overflow: hidden;
+    }
+
+    .code-block .kw {
+      color: #38bdf8;
+    }
+
+    .code-block .fn {
+      color: #86efac;
+    }
+
+    .code-block .st {
+      color: #fbbf24;
+    }
+
+    .code-block .cm {
+      color: #475569;
+    }
+
+    /* ── USER FLOW ──────────────────────────────────────── */
+    .flow {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin: 14px 0;
+    }
+
+    .flow-step {
+      background: var(--primary);
+      color: white;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 9pt;
+      font-weight: 600;
+    }
+
+    .flow-arrow {
+      color: var(--muted);
+      font-size: 12pt;
+      padding: 0 2px;
+    }
+
+    /* ── METRICS ────────────────────────────────────────── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .metric-card {
+      background: linear-gradient(135deg, #1e3a5f, #0f4c75);
+      color: white;
+      border-radius: 12px;
+      padding: 20px 16px;
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 22pt;
+      font-weight: 800;
+      color: #38bdf8;
+      line-height: 1.1;
+    }
+
+    .metric-label {
+      font-size: 8.5pt;
+      color: rgba(255, 255, 255, 0.65);
+      margin-top: 4px;
+    }
+
+    /* ── CONCLUSION ─────────────────────────────────────── */
+    .conclusion-banner {
+      background: linear-gradient(135deg, #0f172a, #1e3a5f);
+      color: white;
+      border-radius: 16px;
+      padding: 36px;
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .conclusion-banner h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 20pt;
+      color: #38bdf8;
+      margin-bottom: 12px;
+    }
+
+    .conclusion-banner p {
+      font-size: 10.5pt;
+      color: rgba(255, 255, 255, 0.75);
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    /* ── PRINT ──────────────────────────────────────────── */
+    @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+
+      body {
+        font-size: 10pt;
+      }
+
+      .cover {
+        min-height: 100vh;
+        page-break-after: always;
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f4c75 100%) !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      .section {
+        page-break-inside: avoid;
+      }
+
+      h2 {
+        page-break-after: avoid;
+      }
+
+      .card-grid {
+        page-break-inside: avoid;
+      }
+
+      .metrics {
+        page-break-inside: avoid;
+      }
+
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .metric-card {
+        background: linear-gradient(135deg, #1e3a5f, #0f4c75) !important;
+        color: white !important;
+      }
+
+      .arch-box {
+        background: #0f172a !important;
+        color: #e2e8f0 !important;
+      }
+
+      .code-block {
+        background: #1e293b !important;
+        color: #94a3b8 !important;
+      }
+
+      .conclusion-banner {
+        background: linear-gradient(135deg, #0f172a, #1e3a5f) !important;
+        color: white !important;
+      }
+
+      thead tr {
+        background: #2563eb !important;
+        color: white !important;
+      }
+
+      .cover-meta-item {
+        background: rgba(255, 255, 255, 0.06) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      }
+
+      .card {
+        background: #f8fafc !important;
+      }
+
+      .highlight {
+        background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
+      }
+
+      .callout {
+        background: #fff8ed !important;
+      }
+    }
+
+    /* ── TOC PAGE ──────────────────────────────────────── */
+    .toc-page {
+      min-height: 40vh;
+      padding: 50px 60px;
+      page-break-after: always;
+    }
+
+    .toc-title {
+      font-size: 22pt;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin-bottom: 28px;
+      border-bottom: 3px solid var(--primary);
+      padding-bottom: 10px;
+    }
+
+    .toc-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 8px 0;
+      border-bottom: 1px dotted var(--border);
+      font-size: 11pt;
+    }
+
+    .toc-item .toc-num {
+      color: var(--muted);
+      font-size: 9pt;
+      font-weight: 600;
+      width: 24px;
+    }
+
+    .toc-item .toc-text {
+      flex: 1;
+      margin-left: 8px;
+      font-weight: 500;
+    }
+
+    .toc-item .toc-section {
+      color: var(--muted);
+      font-size: 9pt;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     COVER PAGE
+═══════════════════════════════════════════════════════════════ -->
+  <div class="cover">
+    <div class="cover-badge">🏆 Project Submission — Final Report</div>
+
+    <div class="cover-logo">🐾</div>
+
+    <h1>Care<span>Bridge</span></h1>
+    <p class="cover-subtitle">A Dual-Service Ecosystem for Pet Owners, Verified Caretakers &amp; Adoption Hubs</p>
+
+    <div class="cover-meta">
+      <div class="cover-meta-item">
+        <div class="label">Project Name</div>
+        <div class="value">CareBridge</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="label">Version</div>
+        <div class="value">1.0 (Prototype)</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="label">Platform</div>
+        <div class="value">Android &amp; iOS</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="label">Framework</div>
+        <div class="value">Flutter 3.x</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="label">Database</div>
+        <div class="value">Firebase / Firestore</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="label">Date</div>
+        <div class="value">March 2026</div>
+      </div>
+    </div>
+
+    <div class="cover-footer">
+      CareBridge &nbsp;·&nbsp; Connecting Pets with Verified Care &nbsp;·&nbsp; All rights reserved © 2026
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     TABLE OF CONTENTS
+═══════════════════════════════════════════════════════════════ -->
+  <div class="toc-page">
+    <div class="toc-title">Table of Contents</div>
+
+    <div class="toc-item">
+      <span class="toc-num">1</span>
+      <span class="toc-text">Executive Summary</span>
+      <span class="toc-section">Section 1</span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">2</span>
+      <span class="toc-text">Problem Statement</span>
+      <span class="toc-section">Section 2</span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">3</span>
+      <span class="toc-text">Proposed Solution &amp; Value Proposition</span>
+      <span class="toc-section">Section 3</span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">4</span>
+      <span class="toc-text">Technical Architecture</span>
+      <span class="toc-section">Section 4</span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">5</span>
+      <span class="toc-text">Key Features &amp; Modules</span>
+      <span class="toc-section">Section 5</span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">6</span>
+      <span class="toc-text">Technology Stack</span>
+      <span class="toc-section">Section 6</span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">7</span>
+      <span class="toc-text">Database Design &amp; Security</span>
+      <span class="toc-section">Section 7</span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">8</span>
+      <span class="toc-text">User Flow &amp; Experience</span>
+      <span class="toc-section">Section 8</span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">9</span>
+      <span class="toc-text">Payment Integration</span>
+      <span class="toc-section">Section 9</span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">10</span>
+      <span class="toc-text">Implementation Roadmap</span>
+      <span class="toc-section">Section 10</span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">11</span>
+      <span class="toc-text">Business Impact &amp; Market Opportunity</span>
+      <span class="toc-section">Section 11</span>
+    </div>
+    <div class="toc-item">
+      <span class="toc-num">12</span>
+      <span class="toc-text">Conclusion</span>
+      <span class="toc-section">Section 12</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+     REPORT BODY
+═══════════════════════════════════════════════════════════════ -->
+  <div class="page">
+
+    <!-- SECTION 1 ─ EXECUTIVE SUMMARY -->
+    <div class="section" id="s1">
+      <h2><span class="section-num">1</span>Executive Summary</h2>
+
+      <p>
+        <strong>CareBridge</strong> is a production-ready mobile application built on Flutter that solves one of pet
+        ownership's biggest challenges: <em>finding safe, verified caretakers on demand</em>. The platform creates a
+        trusted ecosystem connecting three distinct groups — <strong>Pet Owners</strong>, <strong>Verified
+          Caretakers</strong>, and <strong>Adoption Hubs</strong> — through a single, intuitive app.
+      </p>
+
+      <div class="highlight">
+        <strong>Core Value Proposition:</strong> CareBridge uses a proprietary <em>Tiered Trust Verification System</em>
+        to ensure every caretaker listed has been ID-verified, background-checked, and/or NGO-endorsed, giving pet
+        owners peace of mind while creating a reliable income stream for professional caretakers.
+      </div>
+
+      <p>
+        The application is written in <strong>Dart/Flutter</strong> using a clean feature-first architecture with
+        Riverpod state management. The backend is powered entirely by <strong>Firebase</strong> (Authentication,
+        Cloud Firestore, Firebase Storage, Firebase Messaging) ensuring real-time data sync, scalability, and
+        zero-maintenance server infrastructure.
+      </p>
+
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="metric-value">2</div>
+          <div class="metric-label">User Roles<br>(Owner &amp; Caretaker)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">5+</div>
+          <div class="metric-label">Core Feature<br>Modules</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">₹INR</div>
+          <div class="metric-label">Payment via<br>Razorpay</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">3</div>
+          <div class="metric-label">Trust Tiers<br>(Verified / Pro / Trusted)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2 ─ PROBLEM STATEMENT -->
+    <div class="section" id="s2">
+      <h2><span class="section-num">2</span>Problem Statement</h2>
+
+      <p>
+        India's pet ownership has grown dramatically, yet pet care infrastructure remains fragmented and
+        untrustworthy. Pet owners face three critical pain points:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Problem</th>
+            <th>Current Impact</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><strong>Unverified Caretakers</strong></td>
+            <td>No standardized way to vet someone watching your pet; risks of harm or neglect</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><strong>No Proximity Matching</strong></td>
+            <td>Owners cannot easily find nearby caretakers, especially in emergencies</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><strong>Scattered Adoption Services</strong></td>
+            <td>Adoption hubs operate independently; no single platform to browse adoptable pets</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><strong>Zero Emergency Response</strong></td>
+            <td>No platform offers instant access to on-call caretakers for pet emergencies</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td><strong>No Pet Wellness Guidance</strong></td>
+            <td>Owners lack real-time, trusted answers to pet health questions</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <div class="callout-title">📊 Market Context</div>
+        India's pet care market is valued at over <strong>₹3,500 crore</strong> and growing at 14% CAGR annually.
+        Yet, no app addresses the trust and proximity gap between pet owners and caretakers in Tier 1 and Tier 2
+        Indian cities.
+      </div>
+    </div>
+
+    <!-- SECTION 3 ─ SOLUTION -->
+    <div class="section" id="s3">
+      <h2><span class="section-num">3</span>Proposed Solution &amp; Value Proposition</h2>
+
+      <p>
+        CareBridge addresses each problem through a tightly integrated set of features. Instead of building yet
+        another marketplace, CareBridge introduces a <strong>Trust-First architecture</strong> where caretaker
+        credibility is earned through verifiable milestones before they can accept bookings.
+      </p>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-icon">🛡️</div>
+          <h4>Tiered Trust Verification</h4>
+          <p>Three tiers (Verified → Trusted → Pro) unlocked through ID verification, background checks, and NGO partner
+            endorsement. Displayed via visual badges.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📍</div>
+          <h4>Proximity-Based Matching</h4>
+          <p>GPS-based Haversine distance calculation surfaces the nearest available caretakers on a real-time map view,
+            reducing search time from hours to seconds.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🐶</div>
+          <h4>Adoption Hub Integration</h4>
+          <p>Partner NGOs and shelters can list pets (tag: Available / Foster / Adopted) directly on the platform,
+            creating a one-stop discovery experience.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🚨</div>
+          <h4>Emergency SOS System</h4>
+          <p>A dedicated SOS flow instantly shows only <em>on-call</em> caretakers (<code>isEmergency: true</code>),
+            enabling bookings within minutes of a crisis.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🤖</div>
+          <h4>AI Care Assistant (RAG)</h4>
+          <p>A local knowledge-base handles common pet wellness queries; for complex questions, a fallback to Google
+            Gemini API provides expert-grade responses.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">💳</div>
+          <h4>Secure Payment (Razorpay)</h4>
+          <p>INR payments with manual capture flow — funds are authorized at booking and only captured when the
+            caretaker accepts, protecting both parties.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4 ─ ARCHITECTURE -->
+    <div class="section" id="s4">
+      <h2><span class="section-num">4</span>Technical Architecture</h2>
+
+      <p>
+        CareBridge follows a <strong>Feature-First Clean Architecture</strong> pattern. The application is organized
+        into independent feature modules, each containing its own data, domain, and presentation layers, communicating
+        through Riverpod providers.
+      </p>
+
+      <div class="arch-box">
+        <div class="arch-layer layer-mobile">📱 &nbsp; Flutter UI Layer &nbsp;–&nbsp; Material 3 + Glassmorphism +
+          Google Fonts</div>
+        <div class="arch-arrow">⬆⬇</div>
+        <div class="arch-layer layer-state">⚙️ &nbsp; State Management Layer &nbsp;–&nbsp; Flutter Riverpod (Providers +
+          Notifiers)</div>
+        <div class="arch-arrow">⬆⬇</div>
+        <div class="arch-layer layer-fire">🔥 &nbsp; Firebase Services Layer &nbsp;–&nbsp; Auth · Firestore · Storage ·
+          FCM Messaging</div>
+        <div class="arch-arrow">⬆⬇</div>
+        <div class="arch-layer layer-db">🗄️ &nbsp; Data Layer &nbsp;–&nbsp; Cloud Firestore (NoSQL) · Firebase Storage
+          (CDN)</div>
+      </div>
+
+      <h3>Feature Module Structure</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>Location</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>auth</strong></td>
+            <td><code>lib/features/auth/</code></td>
+            <td>Login, Signup, Landing screens + Firebase Auth integration</td>
+          </tr>
+          <tr>
+            <td><strong>onboarding</strong></td>
+            <td><code>lib/features/onboarding/</code></td>
+            <td>Role Selection (Owner or Caretaker) post-registration</td>
+          </tr>
+          <tr>
+            <td><strong>home</strong></td>
+            <td><code>lib/features/home/</code></td>
+            <td>Dashboard with swipeable service cards</td>
+          </tr>
+          <tr>
+            <td><strong>booking</strong></td>
+            <td><code>lib/features/booking/</code></td>
+            <td>3-step booking flow with caretaker selection and payment</td>
+          </tr>
+          <tr>
+            <td><strong>profile</strong></td>
+            <td><code>lib/features/profile/</code></td>
+            <td>User profile management and appointment history</td>
+          </tr>
+          <tr>
+            <td><strong>wellness</strong></td>
+            <td><code>lib/features/wellness/</code></td>
+            <td>AI Care Assistant with RAG pattern</td>
+          </tr>
+          <tr>
+            <td><strong>resources</strong></td>
+            <td><code>lib/features/resources/</code></td>
+            <td>Educational content and pet care guides</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Core Services</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Service / Repository</th>
+            <th>Responsibility</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>AuthRepository</strong></td>
+            <td>Firebase Auth flow: Email/Password + Google Sign-In</td>
+          </tr>
+          <tr>
+            <td><strong>CaretakerRepository</strong></td>
+            <td>Real-time Firestore stream of all caretakers; supports rating updates via transactions</td>
+          </tr>
+          <tr>
+            <td><strong>PetRepository</strong></td>
+            <td>CRUD operations for pet profiles linked to user accounts</td>
+          </tr>
+          <tr>
+            <td><strong>RazorpayRepository</strong></td>
+            <td>Payment lifecycle: authorize → capture on acceptance / void on rejection / refund on cancellation</td>
+          </tr>
+          <tr>
+            <td><strong>StorageRepository</strong></td>
+            <td>Firebase Storage upload/download for profile images and booking status images</td>
+          </tr>
+          <tr>
+            <td><strong>NotificationService</strong></td>
+            <td>Firebase Cloud Messaging for real-time push notifications on booking events</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SECTION 5 ─ KEY FEATURES -->
+    <div class="section" id="s5">
+      <h2><span class="section-num">5</span>Key Features &amp; Modules</h2>
+
+      <h3>5.1 — Trusted Verification System</h3>
+      <p>
+        The platform's differentiating feature. Every caretaker goes through a progressive trust escalation:
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th>Badge</th>
+            <th>Requirements</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Verified</td>
+            <td>🟢 Green Check</td>
+            <td>ID Scan confirmed (<code>isIdVerified: true</code>)</td>
+          </tr>
+          <tr>
+            <td>Trusted</td>
+            <td>🔵 Blue Shield</td>
+            <td>Verified + Background Check passed (<code>isBackgroundChecked: true</code>)</td>
+          </tr>
+          <tr>
+            <td>Pro</td>
+            <td>⭐ Gold Star</td>
+            <td>Trusted + NGO/Partner Endorsement (<code>isPartnerEndorsed: true</code>)</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>A <strong>Trust Modal</strong> pop-up shows users the exact verification checklist for any caretaker before
+        booking.</p>
+
+      <h3>5.2 — Intelligent Booking Engine</h3>
+      <p>
+        The booking flow spans three steps: Service Selection → Caretaker Discovery → Confirmation &amp; Payment.
+        Caretaker discovery uses <strong>Haversine distance calculation</strong> to sort results by proximity in
+        real-time.
+        Owners can attach an optional <em>Education Hub</em> flag to any booking, which bundles nutritional and
+        health data with the caretaker request.
+      </p>
+
+      <h3>5.3 — Emergency SOS</h3>
+      <p>
+        A red-highlighted emergency button on the home dashboard bypasses normal search. It directly queries
+        Firestore for caretakers where <code>isEmergency == true</code> and surfaces them instantly. This is
+        designed so that from SOS button tap to booking confirmation takes under 2 minutes.
+      </p>
+
+      <h3>5.4 — AI Care Assistant (RAG Architecture)</h3>
+      <p>
+        The wellness chatbot uses a <strong>Retrieval-Augmented Generation</strong> pattern:
+      </p>
+      <div class="flow">
+        <div class="flow-step">User Query</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Parse Local knowledge-base.json</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Confidence ≥ 80%?</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Answer Locally</div>
+      </div>
+      <div class="flow" style="margin-top: 6px;">
+        <div class="flow-step" style="background: #6b21a8;">Confidence &lt; 80%</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="background: #6b21a8;">Gemini API (with CareBridge context prompt)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="background: #6b21a8;">Expert AI Response</div>
+      </div>
+
+      <h3>5.5 — Push Notifications</h3>
+      <p>
+        Firebase Cloud Messaging (FCM) drives all real-time alerts. Each device's FCM token is stored in the user's
+        Firestore document and refreshed on each session. Booking status changes (Pending → Accepted / Rejected)
+        trigger push notifications to both the owner and caretaker simultaneously.
+      </p>
+    </div>
+
+    <!-- SECTION 6 ─ TECH STACK -->
+    <div class="section" id="s6">
+      <h2><span class="section-num">6</span>Technology Stack</h2>
+
+      <h3>Frontend / Mobile</h3>
+      <div class="pill-grid">
+        <span class="pill">Flutter 3.x (Dart)</span>
+        <span class="pill">Riverpod 2.4.9</span>
+        <span class="pill">Google Maps Flutter</span>
+        <span class="pill">Glassmorphism UI</span>
+        <span class="pill">Google Fonts (Inter)</span>
+        <span class="pill">Font Awesome Flutter</span>
+        <span class="pill">Animations 2.0</span>
+        <span class="pill">Image Picker</span>
+        <span class="pill">Cached Network Image</span>
+        <span class="pill">Geolocator 10.x</span>
+      </div>
+
+      <h3>Backend &amp; Cloud</h3>
+      <div class="pill-grid">
+        <span class="pill">Firebase Core 3.x</span>
+        <span class="pill">Firebase Authentication</span>
+        <span class="pill">Cloud Firestore</span>
+        <span class="pill">Firebase Storage</span>
+        <span class="pill">Firebase Cloud Messaging</span>
+        <span class="pill">Firebase Cloud Functions</span>
+        <span class="pill">Google Sign-In</span>
+      </div>
+
+      <h3>Payments &amp; External APIs</h3>
+      <div class="pill-grid">
+        <span class="pill">Razorpay Flutter SDK</span>
+        <span class="pill">Google Gemini API</span>
+        <span class="pill">Google Maps Platform</span>
+      </div>
+
+      <h3>Tooling</h3>
+      <div class="pill-grid">
+        <span class="pill">Flutter Lints</span>
+        <span class="pill">Flutter Launcher Icons</span>
+        <span class="pill">Shared Preferences</span>
+        <span class="pill">URL Launcher</span>
+      </div>
+    </div>
+
+    <!-- SECTION 7 ─ DATABASE DESIGN -->
+    <div class="section" id="s7">
+      <h2><span class="section-num">7</span>Database Design &amp; Security</h2>
+
+      <p>
+        CareBridge uses <strong>Cloud Firestore</strong> as a NoSQL document database. Four primary collections
+        store all application state. Security is enforced at the database level via Firestore Security Rules —
+        no unauthorized read or write is possible even if the API keys are publicly exposed.
+      </p>
+
+      <h3>Data Collections</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Collection</th>
+            <th>Key Fields</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>/users</strong></td>
+            <td>name, email, role, latitude, longitude, profileUrl, fcmToken, phoneNumber</td>
+          </tr>
+          <tr>
+            <td><strong>/caretakers</strong></td>
+            <td>name, bio, specialties, price, latitude, longitude, verificationTier, isIdVerified, isBackgroundChecked,
+              isPartnerEndorsed, isAvailable, isEmergency, rating, reviewCount</td>
+          </tr>
+          <tr>
+            <td><strong>/bookings</strong></td>
+            <td>ownerId, caretakerId, serviceType, status (pending/accepted/rejected), paymentStatus, isRated,
+              statusImageUrl, createdAt</td>
+          </tr>
+          <tr>
+            <td><strong>/pets</strong></td>
+            <td>name, breed, ownerId, status (Available/Adopted/Foster), tags (Vaccinated, Active…)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Security Model (Firestore Rules)</h3>
+      <p>
+        All collections enforce <strong>authentication-first</strong> access. Key security decisions:
+      </p>
+
+      <div class="code-block">
+        <span class="cm">// Bookings — Only owner OR caretaker can read/update their own booking</span><br>
+        <span class="kw">allow</span> read: <span class="kw">if</span> isAuthenticated()<br>
+        &nbsp;&nbsp;&amp;&amp; (isOwner(resource.data.<span class="st">ownerId</span>)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|| isOwner(resource.data.<span class="st">caretakerId</span>));<br>
+        <br>
+        <span class="cm">// Bookings — New booking must start as 'pending', ownerId must match caller</span><br>
+        <span class="kw">allow</span> create: <span class="kw">if</span> isAuthenticated()<br>
+        &nbsp;&nbsp;&amp;&amp; request.resource.data.<span class="st">ownerId</span> == request.auth.uid<br>
+        &nbsp;&nbsp;&amp;&amp; request.resource.data.<span class="st">status</span> == <span
+          class="st">'pending'</span>;<br>
+        <br>
+        <span class="cm">// Users — Can only update own permitted fields (no role escalation)</span><br>
+        <span class="kw">allow</span> update: <span class="kw">if</span> isOwner(userId)<br>
+        &nbsp;&nbsp;&amp;&amp; request.resource.data.diff(resource.data)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;.affectedKeys().hasOnly([<span class="st">'name', 'phoneNumber', 'latitude',
+          'longitude', 'profileUrl'</span>]);
+      </div>
+
+      <div class="callout">
+        <div class="callout-title">🔒 Security Highlights</div>
+        Deletes are disabled on users, caretakers, and bookings collections. Field-level update restrictions prevent
+        privilege escalation. Cloud Functions bypass client rules via Admin SDK for sensitive operations like
+        payment capture.
+      </div>
+    </div>
+
+    <!-- SECTION 8 ─ USER FLOW -->
+    <div class="section" id="s8">
+      <h2><span class="section-num">8</span>User Flow &amp; Experience</h2>
+
+      <h3>Pet Owner Flow</h3>
+      <div class="flow">
+        <div class="flow-step">Splash</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Landing Screen</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Login / Signup</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Role Selection</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Home Dashboard</div>
+      </div>
+      <div class="flow" style="margin-top: 8px;">
+        <div class="flow-step">Browse (Map View)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Caretaker Profile + Trust Modal</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Book (3 Steps)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Razorpay Payment</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Track Booking</div>
+      </div>
+
+      <h3 style="margin-top: 20px;">Caretaker Flow</h3>
+      <div class="flow">
+        <div class="flow-step" style="background: #14532d;">Signup as Caretaker</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="background: #14532d;">Build Profile + Upload ID</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="background: #14532d;">Receive Push Notification</div>
+      </div>
+      <div class="flow" style="margin-top: 8px;">
+        <div class="flow-step" style="background: #14532d;">Accept / Reject Booking</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="background: #14532d;">Payment Captured / Released</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="background: #14532d;">Rating Received</div>
+      </div>
+
+      <h3 style="margin-top: 20px;">Design System</h3>
+      <p>
+        The UI uses a <strong>Glassmorphism design language</strong> with smooth transitions from the
+        <code>animations</code> package. Typography is handled by <strong>Google Fonts (Inter)</strong> for a
+        premium, consistent look. The color system is light-themed with a deep blue primary palette.
+      </p>
+    </div>
+
+    <!-- SECTION 9 ─ PAYMENT -->
+    <div class="section" id="s9">
+      <h2><span class="section-num">9</span>Payment Integration (Razorpay)</h2>
+
+      <p>
+        CareBridge uses <strong>Razorpay</strong> for all financial transactions in <strong>INR (₹)</strong>.
+        The integration follows a <em>Manual Capture</em> pattern (Blueprint A) which protects both parties
+        from fraud:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Event</th>
+            <th>Payment Action</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Owner books &amp; pays</td>
+            <td>Payment <strong>Authorized</strong> (not captured)</td>
+            <td>Money held in escrow; not yet transferred</td>
+          </tr>
+          <tr>
+            <td>Caretaker <strong>Accepts</strong></td>
+            <td>Payment <strong>Captured</strong></td>
+            <td>Funds transferred; caretaker payout triggered via Route API</td>
+          </tr>
+          <tr>
+            <td>Caretaker <strong>Rejects</strong></td>
+            <td>Authorization <strong>Voided</strong></td>
+            <td>Full amount returned to owner; zero platform fees</td>
+          </tr>
+          <tr>
+            <td>Post-acceptance Cancellation</td>
+            <td><strong>Refund</strong> triggered</td>
+            <td>Refund processed per platform refund policy</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="highlight">
+        <strong>Route API:</strong> When a booking is captured, a percentage of the payment is automatically
+        transferred to the caretaker's registered Razorpay account (<code>on_hold: true</code> initially,
+        released after service completion). External wallets like Paytm are also supported.
+      </div>
+    </div>
+
+    <!-- SECTION 10 ─ ROADMAP -->
+    <div class="section" id="s10">
+      <h2><span class="section-num">10</span>Implementation Roadmap</h2>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="tl-num">1</div>
+          <div class="tl-content">
+            <h4>Phase 1 — Core MVP (Weeks 1–2) ✅</h4>
+            <p>Firebase Authentication, role-based onboarding, Firestore caretaker &amp; pet data models, Google Maps
+              proximity integration, basic booking flow.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="tl-num">2</div>
+          <div class="tl-content">
+            <h4>Phase 2 — Professional Polish (Weeks 3–4) ✅</h4>
+            <p>Tiered badge UI, Trust Modal, Razorpay payment integration (manual capture), Glassmorphism design system,
+              Gemini AI chat integration, Emergency SOS flow.</p>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="tl-num">3</div>
+          <div class="tl-content">
+            <h4>Phase 3 — Launch (Week 5) 🔄 In Progress</h4>
+            <p>FCM Push Notifications for booking events, adoption inquiry flow, Firestore security rule hardening,
+              Firebase Crashlytics integration, Play Store / App Store submission.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 11 ─ BUSINESS IMPACT -->
+    <div class="section" id="s11">
+      <h2><span class="section-num">11</span>Business Impact &amp; Market Opportunity</h2>
+
+      <p>
+        CareBridge targets the rapidly growing Indian pet care market with a platform designed for trust-first
+        discovery. Unlike generic freelancer platforms, CareBridge's proprietary verification system creates
+        a defensible moat that improves with every caretaker onboarded.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Target Market</strong></td>
+            <td>Urban Indian pet owners (Tier 1 &amp; Tier 2 cities) aged 22–40</td>
+          </tr>
+          <tr>
+            <td><strong>Revenue Model</strong></td>
+            <td>Platform commission on each booking (caretaker payout via Razorpay Route API); future: subscription
+              plans for caretakers</td>
+          </tr>
+          <tr>
+            <td><strong>Competitive Edge</strong></td>
+            <td>Tiered verification, real-time GPS matching, emergency SOS — none found combined on a single platform in
+              India</td>
+          </tr>
+          <tr>
+            <td><strong>Scalability</strong></td>
+            <td>Firebase's serverless architecture scales automatically; zero additional infrastructure cost until
+              millions of users</td>
+          </tr>
+          <tr>
+            <td><strong>Social Impact</strong></td>
+            <td>Adoption Hub integration directly supports pet NGOs and shelters, driving pet adoption rates</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SECTION 12 ─ CONCLUSION -->
+    <div class="section" id="s12">
+      <h2><span class="section-num">12</span>Conclusion</h2>
+
+      <p>
+        CareBridge represents a complete, production-grade mobile application that solves a real and growing problem
+        in India's pet care economy. By combining <strong>Flutter's cross-platform reach</strong>, <strong>Firebase's
+          real-time backend</strong>, a <strong>trust-based verification system</strong>, and <strong>intelligent
+          AI-powered pet wellness guidance</strong>, the platform delivers genuine value to every stakeholder:
+        trust for owners, income for caretakers, and visibility for adoption shelters.
+      </p>
+
+      <p>
+        The codebase follows industry-best practices — feature-first architecture, repository pattern, Riverpod
+        state management, and secured Firestore rules — making it both maintainable and extensible for a
+        production launch.
+      </p>
+
+      <div class="conclusion-banner">
+        <h3>🐾 CareBridge — Where Every Pet Finds Safe Hands</h3>
+        <p>
+          Built with Flutter · Powered by Firebase · Secured by Firestore Rules ·
+          Verified by Trust &amp; Technology
+        </p>
+      </div>
+    </div>
+
+  </div><!-- /.page -->
+
+  <!-- PRINT BUTTON (hidden in print) -->
+  <div style="text-align:center; padding: 30px; background: #f8fafc; border-top: 1px solid #e2e8f0;" class="no-print"
+    id="print-bar">
+    <p style="color: #64748b; font-size: 10pt; margin-bottom: 14px;">
+      📄 To save this as a PDF: Click the button below (or press <kbd>Ctrl+P</kbd> → select <strong>"Save as
+        PDF"</strong>)
+    </p>
+    <button onclick="window.print()" style="background: linear-gradient(135deg, #2563eb, #1e40af); color: white; border: none;
+           padding: 12px 32px; border-radius: 10px; font-size: 12pt; font-weight: 600;
+           cursor: pointer; box-shadow: 0 4px 20px rgba(37,99,235,0.35);">
+      🖨️ Save as PDF
+    </button>
+  </div>
+
+  <style>
+    @media print {
+      #print-bar {
+        display: none !important;
+      }
+    }
+  </style>
+
+</body>
+
+</html>

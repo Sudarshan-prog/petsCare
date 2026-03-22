@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CareBridge — Final Summary Deck</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700&display=swap');
+
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    :root {
+      --dark: #0f172a;
+      --navy: #1e3a5f;
+      --blue: #2563eb;
+      --sky: #38bdf8;
+      --amber: #f59e0b;
+      --green: #22c55e;
+      --white: #ffffff;
+      --muted: rgba(255,255,255,0.6);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #111;
+      color: white;
+    }
+
+    /* ── SLIDE BASE ─────────────────────────────────────── */
+    .slide {
+      width: 100%;
+      min-height: 100vh;
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* slide number badge */
+    .slide-num {
+      position: absolute;
+      bottom: 28px;
+      right: 40px;
+      font-size: 9pt;
+      color: rgba(255,255,255,0.2);
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    /* ── SLIDE BACKGROUNDS ──────────────────────────────── */
+    .bg-cover   { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 55%, #0f4c75 100%); }
+    .bg-dark    { background: linear-gradient(160deg, #0f172a 0%, #1a2744 100%); }
+    .bg-blue    { background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); }
+    .bg-teal    { background: linear-gradient(135deg, #0c4a6e 0%, #0f766e 100%); }
+    .bg-purple  { background: linear-gradient(135deg, #1e0f45 0%, #4c1d95 100%); }
+    .bg-green   { background: linear-gradient(135deg, #052e16 0%, #14532d 100%); }
+    .bg-amber   { background: linear-gradient(135deg, #451a03 0%, #78350f 100%); }
+    .bg-close   { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f4c75 100%); }
+
+    /* ── TYPOGRAPHY ─────────────────────────────────────── */
+    .title-xl {
+      font-family: 'Playfair Display', serif;
+      font-size: 52pt;
+      line-height: 1.05;
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+    .title-xl span { color: var(--sky); }
+
+    .slide-label {
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--sky);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .slide-label::before {
+      content: '';
+      display: block;
+      width: 28px;
+      height: 2px;
+      background: var(--sky);
+      border-radius: 2px;
+    }
+
+    .slide-title {
+      font-size: 28pt;
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+
+    .slide-sub {
+      font-size: 13pt;
+      color: var(--muted);
+      font-weight: 400;
+      line-height: 1.5;
+      max-width: 600px;
+      margin-bottom: 10px;
+    }
+
+    p { font-size: 11pt; color: var(--muted); line-height: 1.7; }
+
+    /* ── COVER ELEMENTS ─────────────────────────────────── */
+    .cover-logo {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, var(--sky), var(--blue));
+      border-radius: 22px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+      margin-bottom: 28px;
+      box-shadow: 0 20px 60px rgba(37,99,235,0.4);
+    }
+
+    .cover-badge {
+      display: inline-block;
+      background: rgba(245,158,11,0.12);
+      border: 1px solid rgba(245,158,11,0.35);
+      color: #fbbf24;
+      padding: 5px 16px;
+      border-radius: 50px;
+      font-size: 8pt;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .cover-meta {
+      display: flex;
+      gap: 28px;
+      margin-top: 44px;
+      flex-wrap: wrap;
+    }
+    .meta-item .label { font-size: 7.5pt; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
+    .meta-item .val   { font-size: 10.5pt; font-weight: 600; color: white; margin-top: 3px; }
+
+    /* ── STAT ROW ───────────────────────────────────────── */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 32px;
+    }
+    .stat {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+    }
+    .stat-val {
+      font-size: 26pt;
+      font-weight: 800;
+      color: var(--sky);
+      line-height: 1;
+    }
+    .stat-label { font-size: 8pt; color: rgba(255,255,255,0.5); margin-top: 6px; }
+
+    /* ── PROBLEM GRID ───────────────────────────────────── */
+    .problem-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 28px;
+    }
+    .problem-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-left: 3px solid #ef4444;
+      border-radius: 0 12px 12px 0;
+      padding: 16px 18px;
+    }
+    .problem-card .pnum {
+      font-size: 7.5pt;
+      font-weight: 700;
+      color: #ef4444;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .problem-card .ptitle {
+      font-size: 11pt;
+      font-weight: 700;
+      color: white;
+      margin: 4px 0;
+    }
+    .problem-card p { font-size: 9.5pt; margin: 0; }
+
+    /* ── FEATURE GRID ───────────────────────────────────── */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 28px;
+    }
+    .feat {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .feat-icon { font-size: 24pt; margin-bottom: 10px; }
+    .feat-title { font-size: 11pt; font-weight: 700; color: white; margin-bottom: 5px; }
+    .feat p { font-size: 9pt; }
+
+    /* ── TRUST TIERS ────────────────────────────────────── */
+    .tier-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 28px;
+    }
+    .tier {
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+    }
+    .tier-1 { background: linear-gradient(135deg, #14532d, #22c55e22); border: 1px solid #22c55e44; }
+    .tier-2 { background: linear-gradient(135deg, #1e3a5f, #2563eb22); border: 1px solid #2563eb44; }
+    .tier-3 { background: linear-gradient(135deg, #451a03, #f59e0b22); border: 1px solid #f59e0b44; }
+    .tier-icon { font-size: 30pt; margin-bottom: 10px; }
+    .tier-name { font-size: 13pt; font-weight: 700; margin-bottom: 6px; }
+    .tier .req { font-size: 9pt; color: var(--muted); }
+
+    /* ── TECH STACK PILLS ───────────────────────────────── */
+    .pill-section { margin-top: 24px; }
+    .pill-group-title { font-size: 9pt; font-weight: 700; color: var(--sky); text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 8px; }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pill {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: white;
+      padding: 5px 14px;
+      border-radius: 50px;
+      font-size: 9pt;
+      font-weight: 500;
+    }
+
+    /* ── ARCH DIAGRAM ───────────────────────────────────── */
+    .arch { margin-top: 24px; }
+    .arch-layer {
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin: 6px 0;
+      font-size: 10pt;
+      font-weight: 600;
+      text-align: center;
+    }
+    .l1 { background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); color: #7dd3fc; }
+    .l2 { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3); color: #86efac; }
+    .l3 { background: rgba(251,146,60,0.12); border: 1px solid rgba(251,146,60,0.3); color: #fdba74; }
+    .l4 { background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.3); color: #c4b5fd; }
+    .arch-arrow { text-align: center; color: rgba(255,255,255,0.2); font-size: 14pt; padding: 1px 0; }
+
+    /* ── PAYMENT FLOW ───────────────────────────────────── */
+    .pay-flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-top: 28px;
+      flex-wrap: nowrap;
+      overflow-x: hidden;
+    }
+    .pay-step {
+      flex: 1;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 18px 12px;
+      text-align: center;
+    }
+    .pay-step .ps-icon { font-size: 22pt; margin-bottom: 6px; }
+    .pay-step .ps-title { font-size: 9.5pt; font-weight: 700; color: white; }
+    .pay-step .ps-sub { font-size: 8pt; color: var(--muted); margin-top: 3px; }
+    .pay-arrow { font-size: 16pt; color: rgba(255,255,255,0.25); padding: 0 8px; flex-shrink: 0; }
+
+    /* ── ROADMAP ────────────────────────────────────────── */
+    .phase-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 28px;
+    }
+    .phase {
+      border-radius: 14px;
+      padding: 22px;
+    }
+    .phase-done   { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); }
+    .phase-active { background: rgba(37,99,235,0.15); border: 1px solid rgba(37,99,235,0.4); }
+    .phase-future { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); }
+    .phase-num { font-size: 9pt; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+    .phase-done .phase-num   { color: #4ade80; }
+    .phase-active .phase-num { color: var(--sky); }
+    .phase-future .phase-num { color: var(--muted); }
+    .phase-title { font-size: 12pt; font-weight: 700; color: white; margin-bottom: 10px; }
+    .phase ul { padding-left: 16px; }
+    .phase ul li { font-size: 9pt; color: var(--muted); margin-bottom: 4px; }
+    .phase-badge {
+      display: inline-block;
+      font-size: 7.5pt;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 50px;
+      margin-top: 12px;
+      letter-spacing: 0.5px;
+    }
+    .badge-done   { background: #14532d; color: #4ade80; }
+    .badge-active { background: #1e3a5f; color: var(--sky); }
+    .badge-future { background: rgba(255,255,255,0.05); color: var(--muted); }
+
+    /* ── IMPACT TABLE ───────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+    thead tr { background: rgba(37,99,235,0.3); }
+    thead th { padding: 12px 16px; text-align: left; font-size: 9.5pt; font-weight: 700; color: var(--sky); }
+    tbody tr { border-bottom: 1px solid rgba(255,255,255,0.06); }
+    tbody tr:hover { background: rgba(255,255,255,0.03); }
+    tbody td { padding: 11px 16px; font-size: 9.5pt; color: rgba(255,255,255,0.8); }
+
+    /* ── CLOSING ────────────────────────────────────────── */
+    .closing-center { text-align: center; }
+    .closing-logo {
+      width: 90px; height: 90px;
+      background: linear-gradient(135deg, var(--sky), var(--blue));
+      border-radius: 26px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px;
+      margin: 0 auto 28px;
+      box-shadow: 0 24px 80px rgba(37,99,235,0.5);
+    }
+    .closing-tagline { font-size: 16pt; color: var(--muted); font-weight: 300; margin-top: 10px; }
+
+    /* ── PRINT ──────────────────────────────────────────── */
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { background: #111 !important; }
+      .slide { page-break-after: always !important; min-height: 100vh; }
+      #print-bar { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ SLIDE 1 — COVER -->
+<div class="slide bg-cover">
+  <div class="cover-badge">🏆 Competition Submission — Summary Deck</div>
+  <div class="cover-logo">🐾</div>
+  <div class="title-xl">Care<span>Bridge</span></div>
+  <div class="slide-sub" style="margin-top: 14px; font-size: 15pt;">
+    A dual-service ecosystem connecting<br/>pet owners with verified caretakers &amp; adoption hubs
+  </div>
+  <div class="cover-meta">
+    <div class="meta-item"><div class="label">Platform</div><div class="val">Android &amp; iOS</div></div>
+    <div class="meta-item"><div class="label">Framework</div><div class="val">Flutter 3.x</div></div>
+    <div class="meta-item"><div class="label">Backend</div><div class="val">Firebase</div></div>
+    <div class="meta-item"><div class="label">Payments</div><div class="val">Razorpay (INR)</div></div>
+    <div class="meta-item"><div class="label">AI</div><div class="val">Google Gemini</div></div>
+  </div>
+  <div class="slide-num">01 / 10</div>
+</div>
+
+<!-- ═════════════════════════════════════ SLIDE 2 — THE PROBLEM -->
+<div class="slide bg-dark">
+  <div class="slide-label">The Problem</div>
+  <div class="slide-title">Pet owners face a trust &amp; access crisis</div>
+  <div class="problem-grid">
+    <div class="problem-card">
+      <div class="pnum">Problem 01</div>
+      <div class="ptitle">Unverified Caretakers</div>
+      <p>No standardized way to vet who watches your pet — risks of harm, neglect, or fraud.</p>
+    </div>
+    <div class="problem-card">
+      <div class="pnum">Problem 02</div>
+      <div class="ptitle">No Proximity Matching</div>
+      <p>Owners can't easily find nearby caretakers, especially during emergencies.</p>
+    </div>
+    <div class="problem-card">
+      <div class="pnum">Problem 03</div>
+      <div class="ptitle">Zero Emergency Response</div>
+      <p>No platform offers instant access to on-call, available caretakers 24/7.</p>
+    </div>
+    <div class="problem-card">
+      <div class="pnum">Problem 04</div>
+      <div class="ptitle">Fragmented Adoption</div>
+      <p>NGOs and shelters operate independently — no single hub for adoptable pets.</p>
+    </div>
+  </div>
+  <div class="stat-row" style="margin-top: 20px; grid-template-columns: repeat(2,1fr);">
+    <div class="stat">
+      <div class="stat-val">₹3,500 Cr</div>
+      <div class="stat-label">India pet care market size</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">14% CAGR</div>
+      <div class="stat-label">Annual market growth rate</div>
+    </div>
+  </div>
+  <div class="slide-num">02 / 10</div>
+</div>
+
+<!-- ═══════════════════════════════════ SLIDE 3 — OUR SOLUTION -->
+<div class="slide bg-blue">
+  <div class="slide-label">The Solution</div>
+  <div class="slide-title">CareBridge — One app. Complete trust.</div>
+  <p style="margin-top: 8px; max-width: 580px; font-size: 12pt;">
+    A trust-first platform that verifies caretakers before they can accept bookings, matches owners
+    to the nearest professionals via GPS, and provides AI-powered wellness guidance.
+  </p>
+  <div class="feature-grid">
+    <div class="feat">
+      <div class="feat-icon">🛡️</div>
+      <div class="feat-title">Tiered Verification</div>
+      <p>3-level trust badges: Verified → Trusted → Pro, earned through real-world checks.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📍</div>
+      <div class="feat-title">GPS Proximity</div>
+      <p>Real-time map showing nearest verified caretakers using Haversine distance.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🚨</div>
+      <div class="feat-title">Emergency SOS</div>
+      <p>Instant filter for on-call caretakers — booking in under 2 minutes.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🤖</div>
+      <div class="feat-title">AI Care Assistant</div>
+      <p>RAG-based chatbot: local knowledge base + Gemini API fallback.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🐶</div>
+      <div class="feat-title">Adoption Hub</div>
+      <p>Browse pets from partner NGOs and shelters — all in one place.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">💳</div>
+      <div class="feat-title">Secure Payments</div>
+      <p>Razorpay manual-capture — money held safely until service is confirmed.</p>
+    </div>
+  </div>
+  <div class="slide-num">03 / 10</div>
+</div>
+
+<!-- ═══════════════════════════════ SLIDE 4 — TRUST VERIFICATION -->
+<div class="slide bg-teal">
+  <div class="slide-label">Core Feature</div>
+  <div class="slide-title">Tiered Trust Verification System</div>
+  <p style="margin-top: 8px; max-width: 620px;">
+    CareBridge's defining differentiator. Caretakers earn trust tiers through verifiable,
+    real-world milestones — displayed as prominent badges visible before every booking.
+  </p>
+  <div class="tier-row">
+    <div class="tier tier-1">
+      <div class="tier-icon">🟢</div>
+      <div class="tier-name">Verified</div>
+      <div class="req">Government ID scanned &amp; confirmed<br/><code style="font-size:8pt; color:#4ade80;">isIdVerified: true</code></div>
+    </div>
+    <div class="tier tier-2">
+      <div class="tier-icon">🔵</div>
+      <div class="tier-name">Trusted</div>
+      <div class="req">Verified + Background check passed<br/><code style="font-size:8pt; color:#7dd3fc;">isBackgroundChecked: true</code></div>
+    </div>
+    <div class="tier tier-3">
+      <div class="tier-icon">⭐</div>
+      <div class="tier-name">Pro</div>
+      <div class="req">Trusted + NGO/Partner endorsement<br/><code style="font-size:8pt; color:#fbbf24;">isPartnerEndorsed: true</code></div>
+    </div>
+  </div>
+  <div style="margin-top: 24px; background: rgba(255,255,255,0.06); border-radius: 12px; padding: 18px 22px; border: 1px solid rgba(255,255,255,0.1);">
+    <p style="font-size: 10.5pt; color: rgba(255,255,255,0.75);">
+      💡 <strong style="color:white;">Trust Modal:</strong> Before booking, owners see a pop-up checklist showing the caretaker's exact verification status — 
+      ID check, background check, and which NGO endorsed them. Full transparency, zero guesswork.
+    </p>
+  </div>
+  <div class="slide-num">04 / 10</div>
+</div>
+
+<!-- ════════════════════════════════════ SLIDE 5 — TECH STACK -->
+<div class="slide bg-dark">
+  <div class="slide-label">Technology</div>
+  <div class="slide-title">Built on a modern, scalable stack</div>
+  <div class="pill-section">
+    <div class="pill-group-title">📱 Mobile / Frontend</div>
+    <div class="pill-row">
+      <span class="pill">Flutter 3.x (Dart)</span>
+      <span class="pill">Riverpod 2.4.9</span>
+      <span class="pill">Google Maps Flutter</span>
+      <span class="pill">Glassmorphism UI</span>
+      <span class="pill">Google Fonts</span>
+      <span class="pill">Animations 2.0</span>
+      <span class="pill">Geolocator</span>
+    </div>
+    <div class="pill-group-title">🔥 Cloud / Backend</div>
+    <div class="pill-row">
+      <span class="pill">Firebase Auth</span>
+      <span class="pill">Cloud Firestore</span>
+      <span class="pill">Firebase Storage</span>
+      <span class="pill">Firebase Cloud Messaging</span>
+      <span class="pill">Cloud Functions</span>
+      <span class="pill">Google Sign-In</span>
+    </div>
+    <div class="pill-group-title">💳 Payments &amp; AI</div>
+    <div class="pill-row">
+      <span class="pill">Razorpay SDK (INR)</span>
+      <span class="pill">Google Gemini API</span>
+      <span class="pill">RAG Architecture</span>
+      <span class="pill">Razorpay Route API</span>
+    </div>
+  </div>
+  <div class="slide-num">05 / 10</div>
+</div>
+
+<!-- ══════════════════════════════════ SLIDE 6 — ARCHITECTURE -->
+<div class="slide bg-purple">
+  <div class="slide-label">Architecture</div>
+  <div class="slide-title">Feature-First Clean Architecture</div>
+  <p style="margin-top: 8px; max-width: 600px;">
+    Each module (auth, booking, home, wellness…) is self-contained with its own data, domain,
+    and presentation layer, communicating through Riverpod providers.
+  </p>
+  <div class="arch">
+    <div class="arch-layer l1">📱 Flutter UI — Material 3 + Glassmorphism + Google Fonts</div>
+    <div class="arch-arrow">⬆ ⬇</div>
+    <div class="arch-layer l2">⚙️ State Management — Flutter Riverpod (Providers + Notifiers)</div>
+    <div class="arch-arrow">⬆ ⬇</div>
+    <div class="arch-layer l3">🔥 Firebase Layer — Auth · Firestore · Storage · FCM · Cloud Functions</div>
+    <div class="arch-arrow">⬆ ⬇</div>
+    <div class="arch-layer l4">🗄️ Data — Cloud Firestore (NoSQL) · Firebase Storage CDN · Razorpay API</div>
+  </div>
+  <div class="slide-num">06 / 10</div>
+</div>
+
+<!-- ══════════════════════════════════ SLIDE 7 — PAYMENT FLOW -->
+<div class="slide bg-green">
+  <div class="slide-label">Payments</div>
+  <div class="slide-title">Trust-first payment flow via Razorpay</div>
+  <p style="margin-top: 8px; max-width: 620px;">
+    Funds are <strong style="color:white;">authorized (not captured)</strong> at booking time.
+    Money moves only when the caretaker actively accepts — protecting both parties from fraud and cancellations.
+  </p>
+  <div class="pay-flow">
+    <div class="pay-step">
+      <div class="ps-icon">💳</div>
+      <div class="ps-title">Owner Pays</div>
+      <div class="ps-sub">Payment authorized<br/>Money held in escrow</div>
+    </div>
+    <div class="pay-arrow">→</div>
+    <div class="pay-step">
+      <div class="ps-icon">🔔</div>
+      <div class="ps-title">Caretaker Notified</div>
+      <div class="ps-sub">Push notification sent<br/>via Firebase FCM</div>
+    </div>
+    <div class="pay-arrow">→</div>
+    <div class="pay-step" style="border-color: rgba(34,197,94,0.4);">
+      <div class="ps-icon">✅</div>
+      <div class="ps-title">Accepts</div>
+      <div class="ps-sub">Payment captured<br/>Payout triggered</div>
+    </div>
+    <div class="pay-arrow" style="color: #ef444466;">OR</div>
+    <div class="pay-step" style="border-color: rgba(239,68,68,0.4);">
+      <div class="ps-icon">❌</div>
+      <div class="ps-title">Rejects</div>
+      <div class="ps-sub">Authorization voided<br/>Full refund, zero fees</div>
+    </div>
+  </div>
+  <div class="slide-num">07 / 10</div>
+</div>
+
+<!-- ════════════════════════════════════ SLIDE 8 — ROADMAP -->
+<div class="slide bg-dark">
+  <div class="slide-label">Roadmap</div>
+  <div class="slide-title">3-Phase Implementation Plan</div>
+  <div class="phase-grid">
+    <div class="phase phase-done">
+      <div class="phase-num">Phase 1 · Weeks 1–2</div>
+      <div class="phase-title">Core MVP</div>
+      <ul>
+        <li>Firebase Authentication</li>
+        <li>Role-based onboarding</li>
+        <li>Firestore data models</li>
+        <li>Google Maps integration</li>
+        <li>Basic booking flow</li>
+      </ul>
+      <div class="phase-badge badge-done">✅ Complete</div>
+    </div>
+    <div class="phase phase-done">
+      <div class="phase-num">Phase 2 · Weeks 3–4</div>
+      <div class="phase-title">Professional Polish</div>
+      <ul>
+        <li>Tiered trust badge UI</li>
+        <li>Razorpay payments</li>
+        <li>Gemini AI chat</li>
+        <li>Emergency SOS flow</li>
+        <li>Glassmorphism design</li>
+      </ul>
+      <div class="phase-badge badge-done">✅ Complete</div>
+    </div>
+    <div class="phase phase-active">
+      <div class="phase-num">Phase 3 · Week 5</div>
+      <div class="phase-title">Launch</div>
+      <ul>
+        <li>FCM Push Notifications</li>
+        <li>Adoption inquiry flow</li>
+        <li>Firebase Crashlytics</li>
+        <li>App Store submission</li>
+        <li>Play Store submission</li>
+      </ul>
+      <div class="phase-badge badge-active">🔄 In Progress</div>
+    </div>
+  </div>
+  <div class="slide-num">08 / 10</div>
+</div>
+
+<!-- ════════════════════════════════ SLIDE 9 — BUSINESS IMPACT -->
+<div class="slide bg-amber">
+  <div class="slide-label">Impact</div>
+  <div class="slide-title">Real market. Real impact.</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Dimension</th>
+        <th>CareBridge Advantage</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong style="color:white;">Target Market</strong></td>
+        <td>Urban Indian pet owners (Tier 1 &amp; 2 cities), age 22–40</td>
+      </tr>
+      <tr>
+        <td><strong style="color:white;">Revenue Model</strong></td>
+        <td>Platform commission on every booking via Razorpay Route API</td>
+      </tr>
+      <tr>
+        <td><strong style="color:white;">Competitive Moat</strong></td>
+        <td>Tiered verification + GPS matching + SOS — no competitor combines all three</td>
+      </tr>
+      <tr>
+        <td><strong style="color:white;">Scalability</strong></td>
+        <td>Firebase serverless — zero extra infrastructure cost until millions of users</td>
+      </tr>
+      <tr>
+        <td><strong style="color:white;">Social Impact</strong></td>
+        <td>Adoption Hub directly supports pet NGOs, driving animal adoption rates</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="stat-row" style="margin-top: 20px;">
+    <div class="stat">
+      <div class="stat-val">2</div>
+      <div class="stat-label">User roles</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">6+</div>
+      <div class="stat-label">Core features</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">3</div>
+      <div class="stat-label">Trust tiers</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">₹INR</div>
+      <div class="stat-label">India-first</div>
+    </div>
+  </div>
+  <div class="slide-num">09 / 10</div>
+</div>
+
+<!-- ═══════════════════════════════════════ SLIDE 10 — CLOSE -->
+<div class="slide bg-close closing-center" style="align-items: center;">
+  <div class="closing-logo">🐾</div>
+  <div class="title-xl">Care<span>Bridge</span></div>
+  <div class="closing-tagline">Where Every Pet Finds Safe Hands</div>
+  <div style="margin-top: 44px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+    <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 24px; text-align: center;">
+      <div style="font-size: 8pt; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Built with</div>
+      <div style="font-size: 11pt; font-weight: 700; margin-top: 3px;">Flutter + Firebase</div>
+    </div>
+    <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 24px; text-align: center;">
+      <div style="font-size: 8pt; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Secured by</div>
+      <div style="font-size: 11pt; font-weight: 700; margin-top: 3px;">Firestore Rules</div>
+    </div>
+    <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 24px; text-align: center;">
+      <div style="font-size: 8pt; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Powered by</div>
+      <div style="font-size: 11pt; font-weight: 700; margin-top: 3px;">Google Gemini AI</div>
+    </div>
+  </div>
+  <div class="slide-num">10 / 10</div>
+</div>
+
+<!-- PRINT BAR -->
+<div id="print-bar" style="text-align:center; padding:28px; background:#1a1a1a; border-top:1px solid #333;">
+  <p style="color:#888; font-size:10pt; margin-bottom:14px;">
+    📄 Press <kbd style="background:#333;color:white;padding:2px 8px;border-radius:4px;">Ctrl+P</kbd> → set Destination to <strong style="color:white;">"Save as PDF"</strong> → enable <strong style="color:white;">"Background graphics"</strong>
+  </p>
+  <button onclick="window.print()"
+    style="background: linear-gradient(135deg,#2563eb,#1e40af);color:white;border:none;
+           padding:12px 32px;border-radius:10px;font-size:12pt;font-weight:700;
+           cursor:pointer;box-shadow:0 4px 20px rgba(37,99,235,0.4);">
+    🖨️ Save as PDF
+  </button>
+</div>
+
+</body>
+</html>
