@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carebridge/core/app_theme.dart';
 import 'package:carebridge/core/auth/auth_provider.dart';
 import 'package:carebridge/core/providers/caretaker_provider.dart';
+import 'package:carebridge/core/providers/profile_provider.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -78,7 +79,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               const Center(child: CircularProgressIndicator()),
         );
 
-        await ref.read(authProvider.notifier).updateProfile(
+        await ref.read(profileProvider.notifier).updateProfile(
               name: _nameController.text.trim(),
               phoneNumber: _phoneController.text.trim(),
               bio: _bioController?.text.trim(),

@@ -46,15 +46,11 @@ class CaretakerHomeScreen extends ConsumerWidget {
                   _buildEarningsCard(
                       context, caretaker, bookingsAsync.value ?? []),
                   const SizedBox(height: 30),
-                  _buildStatusToggle(context),
+                  _buildStatusToggle(context, ref, caretaker),
                   const SizedBox(height: 40),
                   _buildSectionLabel('Incoming Requests'),
                   const SizedBox(height: 16),
                   _buildRequestList(context, ref, bookingsAsync),
-                  const SizedBox(height: 40),
-                  _buildSectionLabel('Business Toolkit'),
-                  const SizedBox(height: 16),
-                  _buildToolGrid(context),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -164,7 +160,8 @@ class CaretakerHomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusToggle(BuildContext context) {
+  Widget _buildStatusToggle(BuildContext context, WidgetRef ref, Caretaker? caretaker) {
+    if (caretaker == null) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
@@ -180,18 +177,22 @@ class CaretakerHomeScreen extends ConsumerWidget {
               Container(
                 width: 12,
                 height: 12,
-                decoration: const BoxDecoration(
-                    color: Colors.green, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                    color: caretaker.isAvailable ? Colors.green : Colors.red,
+                    shape: BoxShape.circle),
               ),
               const SizedBox(width: 12),
-              const Text('Open for New Bookings',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: Colors.black87)),
+              Text(
+                caretaker.isAvailable ? 'Open for Bookings' : 'Currently Unavailable',
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+              ),
             ],
           ),
           Switch.adaptive(
-            value: true,
-            onChanged: (val) {},
+            value: caretaker.isAvailable,
+            onChanged: (val) {
+              ref.read(caretakerRepositoryProvider).updateCaretakerAvailability(caretaker.id, val);
+            },
             activeColor: AppTheme.safetyTeal,
           ),
         ],
@@ -477,54 +478,5 @@ class CaretakerHomeScreen extends ConsumerWidget {
     }
   }
 
-  Widget _buildToolGrid(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-                child: _buildToolItem('Verification',
-                    FontAwesomeIcons.shieldHalved, Colors.blue)),
-            const SizedBox(width: 16),
-            Expanded(
-                child: _buildToolItem('My Services',
-                    FontAwesomeIcons.clipboardCheck, Colors.orange)),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-                child: _buildToolItem(
-                    'Photos', FontAwesomeIcons.images, Colors.purple)),
-            const SizedBox(width: 16),
-            Expanded(
-                child: _buildToolItem(
-                    'Analytics', FontAwesomeIcons.chartLine, Colors.green)),
-          ],
-        ),
-      ],
-    );
-  }
 
-  Widget _buildToolItem(String title, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 16),
-          Text(title,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.black87)),
-        ],
-      ),
-    );
-  }
 }

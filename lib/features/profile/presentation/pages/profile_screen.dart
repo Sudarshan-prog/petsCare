@@ -7,6 +7,7 @@ import 'package:carebridge/features/booking/presentation/pages/booking_history_s
 import 'package:carebridge/features/profile/presentation/pages/edit_profile_screen.dart';
 import 'package:carebridge/features/profile/presentation/pages/my_pets_screen.dart';
 import 'package:carebridge/features/profile/presentation/pages/earnings_screen.dart';
+import 'package:carebridge/features/profile/presentation/pages/tos_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -123,8 +124,15 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                     _buildProfileItem(
                       icon: Icons.security_rounded,
-                      title: 'Privacy & Certificate',
-                      onTap: () {},
+                      title: 'Privacy & Terms',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TOSScreen(),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 24),
                     const Divider(height: 1),
@@ -137,6 +145,16 @@ class ProfileScreen extends ConsumerWidget {
                       color: AppTheme.alertRed,
                       onTap: () {
                         _showLogoutDialog(context, ref);
+                      },
+                    ),
+
+                    // Delete Account Button
+                    _buildProfileItem(
+                      icon: Icons.delete_forever_rounded,
+                      title: 'Delete Account',
+                      color: Colors.red.shade900,
+                      onTap: () {
+                        _showDeleteAccountDialog(context, ref);
                       },
                     ),
                   ],
@@ -213,6 +231,65 @@ class ProfileScreen extends ConsumerWidget {
             child: const Text('Log Out',
                 style: TextStyle(
                     color: AppTheme.alertRed, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
+        content: const Text(
+            'This action is permanent and cannot be undone. All your pets, bookings, and data will be permanently wiped. Are you absolutely sure?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.black45)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              final navigator = Navigator.of(context);
+              
+              try {
+                // Show loading indicator
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) => const Center(child: CircularProgressIndicator()),
+                );
+
+                await ref.read(authProvider.notifier).deleteAccount();
+                
+                // Pop loading indicator
+                navigator.pop();
+
+                // Navigate to landing
+                navigator.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LandingScreen()),
+                  (route) => false,
+                );
+              } catch (e) {
+                // Pop loading indicator
+                navigator.pop();
+                
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(
+                    content: Text(e.toString()),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: const Text('Yes, Delete',
+                style: TextStyle(
+                    color: Colors.red, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

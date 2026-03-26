@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:carebridge/core/providers/pet_provider.dart';
+import 'package:flutter/foundation.dart';
+import 'package:carebridge/core/exceptions/app_exception.dart';
+import 'package:carebridge/models/pet.dart';
 
 abstract class IPetRepository {
   Stream<List<Pet>> getUserPets(String ownerId);
@@ -18,28 +20,55 @@ class PetRepository implements IPetRepository {
         .where('ownerId', isEqualTo: ownerId)
         .snapshots()
         .map((snapshot) =>
-            snapshot.docs.map((doc) => Pet.fromFirestore(doc)).toList());
-  }
-
-  @override
-  Future<void> addPet(Pet pet) {
-    return _firestore.collection('pets').add({
-      'ownerId': pet.ownerId,
-      'name': pet.name,
-      'type': pet.type,
-      'breed': pet.breed,
-      'age': pet.age,
-      'createdAt': FieldValue.serverTimestamp(),
+            snapshot.docs.map((doc) => Pet.fromFirestore(doc)).toList())
+        .handleError((error) {
+      debugPrint('❌ Error fetching pets for $ownerId: $error');
     });
   }
 
   @override
-  Future<void> updatePet(String petId, Map<String, dynamic> data) {
-    return _firestore.collection('pets').doc(petId).update(data);
+  Future<void> addPet(Pet pet) async {
+    try {
+      await _firestore.collection('pets').add({
+        'ownerId': pet.ownerId,
+        'name': pet.name,
+        'type': pet.type,
+        'breed': pet.breed,
+        'age': pet.age,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } on FirebaseException catch (e) {
+      throw AppException('Failed to add pet: ${e.message}',
+          code: e.code, originalError: e);
+    } catch (e) {
+      throw AppException('Unexpected error adding pet: $e',
+          originalError: e);
+    }
   }
 
   @override
-  Future<void> deletePet(String petId) {
-    return _firestore.collection('pets').doc(petId).delete();
+  Future<void> updatePet(String petId, Map<String, dynamic> data) async {
+    try {
+      await _firestore.collection('pets').doc(petId).update(data);
+    } on FirebaseException catch (e) {
+      throw AppException('Failed to update pet: ${e.message}',
+          code: e.code, originalError: e);
+    } catch (e) {
+      throw AppException('Unexpected error updating pet: $e',
+          originalError: e);
+    }
+  }
+
+  @override
+  Future<void> deletePet(String petId) async {
+    try {
+      await _firestore.collection('pets').doc(petId).delete();
+    } on FirebaseException catch (e) {
+      throw AppException('Failed to delete pet: ${e.message}',
+          code: e.code, originalError: e);
+    } catch (e) {
+      throw AppException('Unexpected error deleting pet: $e',
+          originalError: e);
+    }
   }
 }

@@ -1,4 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+import 'package:carebridge/core/exceptions/app_exception.dart';
 import 'package:carebridge/features/booking/data/models/booking_model.dart';
 
 abstract class IBookingRepository {
@@ -21,7 +23,10 @@ class BookingRepository implements IBookingRepository {
         .where('ownerId', isEqualTo: ownerId)
         .snapshots()
         .map((snapshot) =>
-            snapshot.docs.map((doc) => Booking.fromFirestore(doc)).toList());
+            snapshot.docs.map((doc) => Booking.fromFirestore(doc)).toList())
+        .handleError((error) {
+      debugPrint('❌ Error fetching owner bookings: $error');
+    });
   }
 
   @override
@@ -31,42 +36,87 @@ class BookingRepository implements IBookingRepository {
         .where('caretakerId', isEqualTo: caretakerId)
         .snapshots()
         .map((snapshot) =>
-            snapshot.docs.map((doc) => Booking.fromFirestore(doc)).toList());
+            snapshot.docs.map((doc) => Booking.fromFirestore(doc)).toList())
+        .handleError((error) {
+      debugPrint('❌ Error fetching caretaker bookings: $error');
+    });
   }
 
   @override
-  Future<void> createBooking(Booking booking) {
-    return _firestore.collection('bookings').add(booking.toMap());
+  Future<void> createBooking(Booking booking) async {
+    try {
+      await _firestore.collection('bookings').add(booking.toMap());
+    } on FirebaseException catch (e) {
+      throw AppException('Failed to create booking: ${e.message}',
+          code: e.code, originalError: e);
+    } catch (e) {
+      throw AppException('Unexpected error creating booking: $e',
+          originalError: e);
+    }
   }
 
   @override
-  Future<void> updateBookingStatus(String bookingId, String status) {
-    return _firestore
-        .collection('bookings')
-        .doc(bookingId)
-        .update({'status': status});
+  Future<void> updateBookingStatus(String bookingId, String status) async {
+    try {
+      await _firestore
+          .collection('bookings')
+          .doc(bookingId)
+          .update({'status': status});
+    } on FirebaseException catch (e) {
+      throw AppException('Failed to update booking status: ${e.message}',
+          code: e.code, originalError: e);
+    } catch (e) {
+      throw AppException('Unexpected error updating status: $e',
+          originalError: e);
+    }
   }
 
   @override
-  Future<void> updateBookingImageUrl(String bookingId, String? imageUrl) {
-    return _firestore
-        .collection('bookings')
-        .doc(bookingId)
-        .update({'statusImageUrl': imageUrl});
+  Future<void> updateBookingImageUrl(String bookingId, String? imageUrl) async {
+    try {
+      await _firestore
+          .collection('bookings')
+          .doc(bookingId)
+          .update({'statusImageUrl': imageUrl});
+    } on FirebaseException catch (e) {
+      throw AppException('Failed to update booking image: ${e.message}',
+          code: e.code, originalError: e);
+    } catch (e) {
+      throw AppException('Unexpected error updating image: $e',
+          originalError: e);
+    }
   }
 
   @override
   Future<Booking?> getBookingById(String bookingId) async {
-    final doc = await _firestore.collection('bookings').doc(bookingId).get();
-    if (!doc.exists) return null;
-    return Booking.fromFirestore(doc);
+    try {
+      final doc =
+          await _firestore.collection('bookings').doc(bookingId).get();
+      if (!doc.exists) return null;
+      return Booking.fromFirestore(doc);
+    } on FirebaseException catch (e) {
+      throw AppException('Failed to fetch booking: ${e.message}',
+          code: e.code, originalError: e);
+    } catch (e) {
+      throw AppException('Unexpected error fetching booking: $e',
+          originalError: e);
+    }
   }
 
   @override
-  Future<void> updateBookingPaymentStatus(String bookingId, String status) {
-    return _firestore
-        .collection('bookings')
-        .doc(bookingId)
-        .update({'paymentStatus': status});
+  Future<void> updateBookingPaymentStatus(
+      String bookingId, String status) async {
+    try {
+      await _firestore
+          .collection('bookings')
+          .doc(bookingId)
+          .update({'paymentStatus': status});
+    } on FirebaseException catch (e) {
+      throw AppException('Failed to update payment status: ${e.message}',
+          code: e.code, originalError: e);
+    } catch (e) {
+      throw AppException('Unexpected error updating payment status: $e',
+          originalError: e);
+    }
   }
 }

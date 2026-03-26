@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carebridge/core/app_theme.dart';
-import 'package:carebridge/core/auth/auth_provider.dart';
+import 'package:carebridge/core/providers/profile_provider.dart';
 import 'package:carebridge/shared/widgets/main_layout.dart';
 import 'package:carebridge/shared/presentation/pages/map_selection_screen.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -194,7 +194,7 @@ class _PetProfileSetupScreenState extends ConsumerState<PetProfileSetupScreen> {
                           if (_nameController.text.isNotEmpty && _lat != null) {
                             setState(() => _isLoading = true);
                             await ref
-                                .read(authProvider.notifier)
+                                .read(profileProvider.notifier)
                                 .savePetProfile(
                                   name: _nameController.text,
                                   type: _selectedType,
@@ -202,7 +202,7 @@ class _PetProfileSetupScreenState extends ConsumerState<PetProfileSetupScreen> {
                                   age: _selectedAge,
                                 );
                             await ref
-                                .read(authProvider.notifier)
+                                .read(profileProvider.notifier)
                                 .updateLocation(_lat!, _lng!);
 
                             setState(() => _isLoading = false);

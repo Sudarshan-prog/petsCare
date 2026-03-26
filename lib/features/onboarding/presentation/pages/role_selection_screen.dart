@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carebridge/core/app_theme.dart';
 import 'package:carebridge/core/auth/auth_provider.dart';
+import 'package:carebridge/core/providers/profile_provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'pet_profile_setup_screen.dart';
 import 'caretaker_setup_screen.dart';
@@ -83,7 +84,7 @@ class _RoleSelectionScreenState extends ConsumerState<RoleSelectionScreen> {
                       : () async {
                           setState(() => _isLoading = true);
                           await ref
-                              .read(authProvider.notifier)
+                              .read(profileProvider.notifier)
                               .saveUserRole(_selectedRole!);
                           setState(() => _isLoading = false);
 

@@ -3,37 +3,15 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../repositories/payment_repository_interface.dart';
 import '../repositories/razorpay_repository.dart';
 
+// Re-export model so existing imports keep working
+export 'package:carebridge/models/payment_state.dart';
+
+// Import for internal use
+import 'package:carebridge/models/payment_state.dart';
+
 final paymentRepositoryProvider = Provider<IPaymentRepository>((ref) {
   return RazorpayRepository();
 });
-
-class PaymentState {
-  final bool isLoading;
-  final String? error;
-  final String? paymentId;
-  final bool isSuccess;
-
-  PaymentState({
-    this.isLoading = false,
-    this.error,
-    this.paymentId,
-    this.isSuccess = false,
-  });
-
-  PaymentState copyWith({
-    bool? isLoading,
-    String? error,
-    String? paymentId,
-    bool? isSuccess,
-  }) {
-    return PaymentState(
-      isLoading: isLoading ?? this.isLoading,
-      error: error ?? this.error,
-      paymentId: paymentId ?? this.paymentId,
-      isSuccess: isSuccess ?? this.isSuccess,
-    );
-  }
-}
 
 class PaymentNotifier extends StateNotifier<PaymentState> {
   final IPaymentRepository _repository;
@@ -83,7 +61,6 @@ class PaymentNotifier extends StateNotifier<PaymentState> {
 
   void _handleExternalWallet(ExternalWalletResponse response) {
     state = state.copyWith(isLoading: false);
-    // Handle external wallet if needed
   }
 
   @override

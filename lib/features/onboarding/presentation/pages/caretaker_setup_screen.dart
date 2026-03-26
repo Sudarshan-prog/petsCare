@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carebridge/core/app_theme.dart';
 import 'package:carebridge/core/auth/auth_provider.dart';
+import 'package:carebridge/core/providers/profile_provider.dart';
 import 'package:carebridge/shared/widgets/main_layout.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:carebridge/shared/presentation/pages/map_selection_screen.dart';
@@ -408,7 +409,7 @@ class _CaretakerSetupScreenState extends ConsumerState<CaretakerSetupScreen> {
       serviceFees[s] = _availableServices[s]!;
     }
 
-    await ref.read(authProvider.notifier).saveCaretakerProfile(
+    await ref.read(profileProvider.notifier).saveCaretakerProfile(
           bio: _bioController.text,
           specialties: _selectedSpecialties,
           price: _priceController.text,

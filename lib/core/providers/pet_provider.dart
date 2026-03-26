@@ -1,46 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:carebridge/core/auth/auth_provider.dart';
 
-class Pet {
-  final String id;
-  final String ownerId;
-  final String name;
-  final String type;
-  final String breed;
-  final String age;
+// Re-export model so existing imports keep working
+export 'package:carebridge/models/pet.dart';
 
-  Pet({
-    required this.id,
-    required this.ownerId,
-    required this.name,
-    required this.type,
-    required this.breed,
-    required this.age,
-  });
-
-  factory Pet.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    return Pet(
-      id: doc.id,
-      ownerId: data['ownerId'] ?? '',
-      name: data['name'] ?? '',
-      type: data['type'] ?? '',
-      breed: data['breed'] ?? '',
-      age: data['age'] ?? '',
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'ownerId': ownerId,
-      'name': name,
-      'type': type,
-      'breed': breed,
-      'age': age,
-    };
-  }
-}
+// Import for internal use
+import 'package:carebridge/models/pet.dart';
 
 // 1. Data Provider (Stream)
 final userPetsProvider = StreamProvider<List<Pet>>((ref) {

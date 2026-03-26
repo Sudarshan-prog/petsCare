@@ -48,6 +48,8 @@ app.*.map.json
 **/*.json
 !firebase.json
 !firestore.indexes.json
+!functions/package.json
+!functions/package-lock.json
 **/*.properties
 **/*.keystore
 **/*.jks
