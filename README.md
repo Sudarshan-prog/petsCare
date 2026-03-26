@@ -187,7 +187,7 @@ flutter run
 
 ## 📄 License
 
-This project is built as a hackathon/competition submission.  
+This project is a startup idea.  
 © 2026 CareBridge. All rights reserved.
 
 ---
